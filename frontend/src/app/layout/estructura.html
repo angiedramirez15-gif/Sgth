@@ -1,0 +1,61 @@
+<mat-sidenav-container class="contenedor">
+  <mat-sidenav class="menu" [mode]="movil() ? 'over' : 'side'" [opened]="movil() ? menuAbierto() && movil() : true"
+               (closedStart)="menuAbierto.set(false)">
+    <a class="menu__marca" routerLink="/" (click)="alNavegar()" aria-label="Inicio del SGTH">
+      <img src="marca/logo-drim-duit-claro.png" alt="DRIM DUIT" width="132" height="56">
+      <span>Talento Humano</span>
+    </a>
+
+    <nav aria-label="Menú principal">
+      <a class="menu__opcion" routerLink="/" routerLinkActive="activa" [routerLinkActiveOptions]="{ exact: true }" (click)="alNavegar()">
+        <mat-icon>home</mat-icon><span>Inicio</span>
+      </a>
+      @for (o of principal(); track o.ruta) {
+        <a class="menu__opcion" [routerLink]="o.ruta" routerLinkActive="activa" (click)="alNavegar()">
+          <mat-icon>{{ o.icono }}</mat-icon><span>{{ o.titulo }}</span>
+        </a>
+      }
+
+      @if (administracion().length) {
+        <p class="menu__grupo" id="grupo-admin">Administración</p>
+        <div role="group" aria-labelledby="grupo-admin">
+          @for (o of administracion(); track o.ruta) {
+            <a class="menu__opcion" [routerLink]="o.ruta" routerLinkActive="activa" (click)="alNavegar()">
+              <mat-icon>{{ o.icono }}</mat-icon><span>{{ o.titulo }}</span>
+            </a>
+          }
+        </div>
+      }
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="principal">
+    <header class="barra">
+      @if (movil()) {
+        <button mat-icon-button (click)="menuAbierto.set(true)" aria-label="Abrir menú">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <p class="barra__titulo">{{ titulo() }}</p>
+
+      <button class="usuario" [matMenuTriggerFor]="menuUsuario" aria-label="Opciones de la cuenta">
+        <span class="usuario__iniciales" aria-hidden="true">{{ iniciales() }}</span>
+        <span class="usuario__datos">
+          <span class="usuario__nombre">{{ usuario()?.nombre }}</span>
+          <span class="usuario__cargo">{{ usuario()?.cargo }}</span>
+        </span>
+        <mat-icon>expand_more</mat-icon>
+      </button>
+      <mat-menu #menuUsuario="matMenu" xPosition="before">
+        <div class="menu-usuario__rol">Rol: {{ rol() }}</div>
+        <mat-divider />
+        <a mat-menu-item routerLink="/cambiar-clave"><mat-icon>key</mat-icon>Cambiar clave</a>
+        <button mat-menu-item (click)="salir()"><mat-icon>logout</mat-icon>Cerrar sesión</button>
+      </mat-menu>
+    </header>
+
+    <main class="contenido">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

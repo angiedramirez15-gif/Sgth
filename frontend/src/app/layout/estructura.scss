@@ -1,0 +1,149 @@
+.contenedor {
+  height: 100dvh;
+  background: var(--sgth-fondo);
+}
+
+// --- Menú lateral petróleo ---
+.menu {
+  width: 248px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sgth-petroleo);
+  color: #fff;
+  --mat-sidenav-container-shape: 0;
+}
+
+.menu__marca {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 26px 24px 22px;
+  border-top: 6px solid var(--sgth-verde);
+  color: rgb(255 255 255 / 0.72);
+  font-size: 0.8rem;
+  text-decoration: none;
+
+  img { width: 128px; height: auto; }
+}
+
+nav { padding: 8px 0 24px; }
+
+.menu__grupo {
+  margin: 20px 24px 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.menu__opcion {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  padding: 0 24px;
+  color: rgb(255 255 255 / 0.86);
+  font-size: 0.95rem;
+  text-decoration: none;
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; color: rgb(255 255 255 / 0.7); }
+
+  &:hover { background: rgb(255 255 255 / 0.06); color: #fff; }
+
+  &:focus-visible { outline-offset: -3px; }
+
+  // Opción activa: barra verde vertical, como los edificios del logo
+  &.activa {
+    background: var(--sgth-petroleo-profundo);
+    color: #fff;
+    font-weight: 600;
+
+    mat-icon { color: var(--sgth-verde); }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 5px;
+      background: var(--sgth-verde);
+    }
+  }
+}
+
+// --- Barra superior ---
+.principal {
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 0 16px 0 28px;
+  background: var(--sgth-superficie);
+  border-bottom: 1px solid var(--sgth-linea);
+}
+
+.barra__titulo {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sgth-tinta-suave);
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--sgth-radio);
+  background: none;
+  font: inherit;
+  color: var(--sgth-tinta);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: var(--sgth-fondo); }
+}
+
+.usuario__iniciales {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sgth-petroleo);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.usuario__datos { display: flex; flex-direction: column; line-height: 1.25; }
+.usuario__nombre { font-size: 0.9rem; font-weight: 600; }
+.usuario__cargo { font-size: 0.78rem; color: var(--sgth-tinta-suave); }
+
+.menu-usuario__rol {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.contenido {
+  flex: 1;
+  padding: 32px 28px 48px;
+}
+
+@media (max-width: 960px) {
+  .barra { padding-left: 8px; }
+  .contenido { padding: 24px 16px 40px; }
+  .usuario__datos { display: none; }
+}

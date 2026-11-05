@@ -1,0 +1,68 @@
+erDiagram
+  usuarios {
+    int id PK
+    varchar usuario UK
+    varchar clave_hash
+    varchar nombre_completo
+    varchar cargo
+    varchar correo
+    int rol_id FK
+    int colaborador_id FK
+    tinyint debe_cambiar_clave
+    tinyint intentos_fallidos
+    datetime bloqueado_hasta
+    datetime ultimo_acceso
+  }
+  roles {
+    int id PK
+    varchar codigo UK
+    varchar nombre
+    varchar descripcion
+  }
+  permisos {
+    int id PK
+    varchar codigo UK
+    varchar modulo
+    varchar descripcion
+  }
+  rol_permisos {
+    int rol_id PK,FK
+    int permiso_id PK,FK
+  }
+  auditoria {
+    bigint id PK
+    datetime fecha
+    int usuario_id FK
+    enum accion
+    varchar tabla
+    int registro_id
+    longtext datos_antes
+    longtext datos_despues
+    varchar ip
+  }
+  alertas {
+    bigint id PK
+    enum tipo
+    enum rol_destino
+    int colaborador_id FK
+    varchar referencia_tabla
+    int referencia_id
+    date fecha_evento
+    varchar mensaje
+    enum estado
+    datetime generada_en
+    int atendida_por FK
+    datetime atendida_en
+  }
+  colaboradores {
+    int id PK
+    varchar nombres
+    varchar apellidos
+  }
+  roles ||--o{ usuarios : "rol_id"
+  colaboradores |o--o{ usuarios : "colaborador_id"
+  roles ||--o{ rol_permisos : "rol_id"
+  permisos ||--o{ rol_permisos : "permiso_id"
+  usuarios |o--o{ auditoria : "usuario_id"
+  colaboradores |o--o{ alertas : "colaborador_id"
+  usuarios |o--o{ alertas : "atendida_por"

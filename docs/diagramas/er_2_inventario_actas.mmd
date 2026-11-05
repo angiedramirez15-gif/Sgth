@@ -1,0 +1,149 @@
+erDiagram
+  elementos {
+    int id PK
+    enum categoria_inventario
+    varchar nombre
+    varchar subcategoria
+    varchar unidad
+    tinyint controla_por_unidad
+    tinyint maneja_tallas
+    varchar norma_certificacion
+    smallint vida_util_dias
+    int stock_minimo
+  }
+  existencias {
+    int elemento_id PK,FK
+    varchar talla PK
+    int cantidad
+  }
+  activos {
+    int id PK
+    int elemento_id FK
+    varchar serial UK
+    varchar placa_inventario UK
+    varchar marca
+    varchar modelo
+    varchar descripcion_adicional
+    enum estado
+    enum condicion
+    int colaborador_actual_id FK
+    date fecha_compra
+    int proveedor_id FK
+    decimal valor_compra
+    varchar observaciones
+  }
+  proveedores {
+    int id PK
+    varchar nit UK
+    varchar nombre
+    varchar telefono
+    varchar correo
+  }
+  movimientos_inventario {
+    bigint id PK
+    datetime fecha
+    int elemento_id FK
+    varchar talla
+    int activo_id FK
+    enum tipo_movimiento
+    int cantidad
+    int proveedor_id FK
+    varchar numero_factura
+    int acta_id FK
+    int usuario_id FK
+    varchar observacion
+  }
+  actas {
+    int id PK
+    varchar consecutivo UK
+    enum tipo_acta
+    int plantilla_id FK
+    int colaborador_id FK
+    int usuario_id FK
+    int colaborador_anterior_id FK
+    date fecha
+    varchar ciudad
+    enum motivo
+    int periodo_dotacion_id FK
+    varchar firmante_entrega_nombre
+    varchar firmante_entrega_cargo
+    varchar firmante_recibe_nombre
+    varchar firmante_recibe_cargo
+    varchar observaciones
+    enum estado
+    varchar ruta_pdf_generado
+    varchar ruta_acta_firmada
+    datetime fecha_carga_firmada
+    varchar motivo_anulacion
+    int anulada_por FK
+    datetime anulada_en
+  }
+  actas_detalle {
+    int id PK
+    int acta_id FK
+    int elemento_id FK
+    int activo_id FK
+    varchar talla
+    int cantidad
+    enum condicion
+    date fecha_reposicion
+    tinyint repuesto
+    int repuesto_en_acta_id FK
+    varchar observaciones
+  }
+  plantillas_acta {
+    int id PK
+    enum plantilla
+    smallint version
+    varchar titulo
+    text texto_introduccion
+    varchar texto_manifiesta
+    longtext clausulas
+    tinyint vigente
+  }
+  periodos_dotacion {
+    int id PK
+    smallint anio
+    tinyint numero
+    date fecha_limite
+  }
+  matriz_epp_cargo {
+    int cargo_id PK,FK
+    int elemento_id PK,FK
+    tinyint cantidad
+    varchar observacion
+  }
+  colaboradores {
+    int id PK
+    varchar nombres
+    varchar apellidos
+  }
+  usuarios {
+    int id PK
+    varchar usuario UK
+  }
+  cargos {
+    int id PK
+    varchar nombre UK
+  }
+  elementos ||--o{ existencias : "elemento_id"
+  elementos ||--o{ activos : "elemento_id"
+  colaboradores |o--o{ activos : "colaborador_actual_id"
+  proveedores |o--o{ activos : "proveedor_id"
+  elementos ||--o{ movimientos_inventario : "elemento_id"
+  activos |o--o{ movimientos_inventario : "activo_id"
+  proveedores |o--o{ movimientos_inventario : "proveedor_id"
+  actas |o--o{ movimientos_inventario : "acta_id"
+  usuarios ||--o{ movimientos_inventario : "usuario_id"
+  plantillas_acta ||--o{ actas : "plantilla_id"
+  colaboradores ||--o{ actas : "colaborador_id"
+  usuarios ||--o{ actas : "usuario_id"
+  colaboradores |o--o{ actas : "colaborador_anterior_id"
+  periodos_dotacion |o--o{ actas : "periodo_dotacion_id"
+  usuarios |o--o{ actas : "anulada_por"
+  actas ||--o{ actas_detalle : "acta_id"
+  elementos ||--o{ actas_detalle : "elemento_id"
+  activos |o--o{ actas_detalle : "activo_id"
+  actas |o--o{ actas_detalle : "repuesto_en_acta_id"
+  cargos ||--o{ matriz_epp_cargo : "cargo_id"
+  elementos ||--o{ matriz_epp_cargo : "elemento_id"

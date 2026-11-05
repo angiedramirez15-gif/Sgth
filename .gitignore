@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Compilados
+dist/
+.angular/
+coverage/
+
+# Configuración local con claves: NUNCA subir
+.env
+.env.*
+!.env.example
+
+# Documentos y actas de colaboradores (datos personales, Ley 1581)
+archivos/
+
+# Respaldos de base de datos
+*.dump
+respaldos/
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+*.log
+.idea/

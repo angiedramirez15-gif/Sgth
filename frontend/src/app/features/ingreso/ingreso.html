@@ -1,0 +1,68 @@
+<div class="ingreso">
+  <aside class="marca" aria-hidden="true">
+    <img class="marca__logo" src="marca/logo-drim-duit-claro.png" alt="" width="220" height="94">
+    <div class="marca__texto">
+      <p class="marca__sistema">Sistema de Gestión de Talento Humano</p>
+      <p class="marca__detalle">Colaboradores, documentos, dotación, EPP y equipos de trabajo en un solo lugar.</p>
+    </div>
+    <img class="marca__silueta" src="marca/isotipo-claro.png" alt="">
+  </aside>
+
+  <main class="formulario">
+    <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+      <img class="formulario__logo-movil" src="marca/logo-drim-duit.png" alt="DRIM DUIT" width="160" height="68">
+      <h1>Ingresar al SGTH</h1>
+      <p class="ayuda">Use el usuario y la clave que le asignó el administrador del sistema.</p>
+
+      @if (motivo() === 'inactividad') {
+        <p class="aviso aviso--info" role="status">
+          <mat-icon>schedule</mat-icon>
+          Su sesión se cerró por inactividad. Ingrese de nuevo para continuar.
+        </p>
+      } @else if (motivo() === 'expirada') {
+        <p class="aviso aviso--info" role="status">
+          <mat-icon>lock_clock</mat-icon>
+          Su sesión expiró. Ingrese de nuevo para continuar.
+        </p>
+      }
+
+      @if (error()) {
+        <p class="aviso aviso--error" role="alert">
+          <mat-icon>error</mat-icon>
+          {{ error() }}
+        </p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario</mat-label>
+        <input matInput formControlName="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
+        @if (form.controls.usuario.hasError('required')) {
+          <mat-error>Escriba su usuario</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Clave</mat-label>
+        <input matInput formControlName="clave" autocomplete="current-password" [type]="verClave() ? 'text' : 'password'">
+        <button mat-icon-button matSuffix type="button" (click)="verClave.set(!verClave())"
+                [attr.aria-label]="verClave() ? 'Ocultar clave' : 'Mostrar clave'" [attr.aria-pressed]="verClave()">
+          <mat-icon>{{ verClave() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (form.controls.clave.hasError('required')) {
+          <mat-error>Escriba su clave</mat-error>
+        }
+      </mat-form-field>
+
+      <button mat-flat-button type="submit" class="formulario__boton" [disabled]="enviando()">
+        {{ enviando() ? 'Verificando…' : 'Ingresar' }}
+      </button>
+      @if (enviando()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Verificando usuario" />
+      }
+
+      <p class="olvido">¿Olvidó su clave? Pídale al administrador del sistema que la restablezca.</p>
+    </form>
+
+    <footer class="pie">DRIM DUIT S.A.S., Palmira, {{ anio }}</footer>
+  </main>
+</div>

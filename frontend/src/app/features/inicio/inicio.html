@@ -1,0 +1,39 @@
+<section class="saludo">
+  <h1>{{ saludo }}, {{ nombre() }}</h1>
+  <p class="saludo__fecha">{{ fecha }}</p>
+</section>
+
+<section class="estado" aria-labelledby="titulo-estado">
+  <h2 id="titulo-estado" class="lector">Estado del sistema</h2>
+  @if (sinConexion()) {
+    <p class="estado__linea estado__linea--mal"><mat-icon>cloud_off</mat-icon>No hay conexión con el servidor del SGTH.</p>
+  } @else if (salud(); as s) {
+    @if (s.baseDatos === 'ok') {
+      <p class="estado__linea estado__linea--bien"><mat-icon>check_circle</mat-icon>Servidor y base de datos funcionando.</p>
+    } @else {
+      <p class="estado__linea estado__linea--mal"><mat-icon>database</mat-icon>El servidor responde, pero la base de datos no. Verifique que MariaDB esté encendido.</p>
+    }
+  }
+</section>
+
+<section aria-labelledby="titulo-modulos">
+  <h2 id="titulo-modulos">Sus módulos</h2>
+  <p class="nota">Estos son los módulos que su rol puede usar. Se habilitan a medida que avanza la construcción del sistema.</p>
+
+  <ul class="modulos">
+    @for (m of modulos(); track m.ruta) {
+      <li>
+        <a [routerLink]="m.ruta" class="modulo">
+          <span class="modulo__icono"><mat-icon>{{ m.icono }}</mat-icon></span>
+          <span class="modulo__texto">
+            <span class="modulo__titulo">{{ m.titulo }}</span>
+            <span class="modulo__descripcion">{{ m.descripcion }}</span>
+          </span>
+          <span class="modulo__estado">En construcción, fase {{ m.fase }}</span>
+        </a>
+      </li>
+    } @empty {
+      <li class="vacio">Su rol todavía no tiene módulos asignados. Pídale al administrador que revise sus permisos.</li>
+    }
+  </ul>
+</section>

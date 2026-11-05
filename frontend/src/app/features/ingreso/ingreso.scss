@@ -1,0 +1,162 @@
+.ingreso {
+  display: grid;
+  grid-template-columns: minmax(340px, 42%) 1fr;
+  min-height: 100dvh;
+}
+
+// --- Panel de marca: petróleo, con la silueta de edificios del logo ---
+.marca {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 56px;
+  background: var(--sgth-petroleo);
+  color: #fff;
+
+  // Las dos barras horizontales del logotipo: verde arriba, petróleo profundo abajo
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 10px;
+  }
+  &::before { top: 0; background: var(--sgth-verde); }
+  &::after { bottom: 0; background: var(--sgth-petroleo-profundo); z-index: 1; }
+}
+
+.marca__logo {
+  width: 200px;
+  height: auto;
+  margin-top: 12px;
+}
+
+.marca__texto {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  margin-bottom: 40vh;
+  max-width: 30ch;
+}
+
+.marca__sistema {
+  margin: 0 0 14px;
+  max-width: 13ch;
+  font-size: clamp(2rem, 2.8vw, 2.8rem);
+  font-weight: 800;
+  font-stretch: 78%;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.marca__detalle {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.78);
+}
+
+// Silueta de edificios: el isotipo del logo, grande y anclado al borde inferior
+.marca__silueta {
+  position: absolute;
+  left: 40px;
+  bottom: 0;
+  width: min(78%, 440px);
+  height: auto;
+  opacity: 0.16;
+  transform-origin: bottom;
+  animation: levantar 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes levantar {
+  from { transform: scaleY(0.6); opacity: 0; }
+  to { transform: scaleY(1); opacity: 0.16; }
+}
+
+// --- Formulario ---
+.formulario {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 24px;
+  background: var(--sgth-superficie);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 380px;
+    margin: auto 0;
+  }
+
+  h1 { margin-bottom: 6px; }
+
+  mat-form-field { width: 100%; }
+}
+
+.formulario__logo-movil { display: none; }
+
+.ayuda {
+  margin: 0 0 24px;
+  color: var(--sgth-tinta-suave);
+}
+
+.formulario__boton {
+  height: 48px;
+  margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+mat-progress-bar { margin-top: 8px; }
+
+.olvido {
+  margin: 20px 0 0;
+  font-size: 0.875rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--sgth-radio);
+  font-size: 0.9rem;
+
+  mat-icon { flex: none; font-size: 20px; width: 20px; height: 20px; }
+
+  &--error { background: #fdecea; color: var(--sgth-error); border-left: 4px solid var(--sgth-error); }
+  &--info { background: var(--sgth-petroleo-suave); color: var(--sgth-petroleo-profundo); border-left: 4px solid var(--sgth-petroleo); }
+}
+
+.pie {
+  font-size: 0.8rem;
+  color: var(--sgth-tinta-suave);
+}
+
+// --- Pantallas pequeñas: sin panel lateral ---
+@media (max-width: 860px) {
+  .ingreso { grid-template-columns: 1fr; }
+  .marca { display: none; }
+  .formulario {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding-top: 40px;
+    border-top: 10px solid var(--sgth-verde);
+
+    form { margin: 0 auto; }
+    .pie { margin-top: auto; padding-top: 32px; text-align: center; }
+  }
+  .formulario__logo-movil {
+    display: block;
+    width: 140px;
+    height: auto;
+    margin-bottom: 36px;
+  }
+}

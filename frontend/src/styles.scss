@@ -1,0 +1,109 @@
+// =====================================================================
+//  SGTH — estilos globales con la identidad de DRIM DUIT S.A.S.
+//  Colores tomados del logo: petróleo #09424D y verde #4DD970.
+// =====================================================================
+@use '@angular/material' as mat;
+@use './styles/theme-colors' as marca;
+
+// Tipografía y para íconos: archivos locales, funcionan sin internet
+@import '@fontsource-variable/archivo/wdth.css';
+@import 'material-symbols/outlined.css';
+
+// --- Tokens de la marca --------------------------------------------------
+:root {
+  --sgth-petroleo: #09424d;
+  --sgth-petroleo-profundo: #062f37;
+  --sgth-petroleo-suave: #e3eef0;
+  --sgth-verde: #4dd970;
+  --sgth-verde-texto: #1d7a3a; // verde con contraste suficiente sobre blanco
+  --sgth-fondo: #f3f6f6;
+  --sgth-superficie: #ffffff;
+  --sgth-tinta: #12262b;
+  --sgth-tinta-suave: #4d6166;
+  --sgth-linea: #d6dfe0;
+  --sgth-ambar: #b86e00;
+  --sgth-ambar-fondo: #fff3df;
+  --sgth-error: #b3261e;
+
+  --sgth-fuente: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif;
+  --sgth-radio: 6px;
+}
+
+// --- Tema de Angular Material ---------------------------------------------
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      primary: marca.$primary-palette,
+      tertiary: marca.$tertiary-palette,
+      theme-type: light,
+    ),
+    typography: (
+      plain-family: var(--sgth-fuente),
+      brand-family: var(--sgth-fuente),
+    ),
+    density: 0,
+  ));
+
+  // El tono exacto del logo como color principal (la paleta generada lo aclara)
+  @include mat.theme-overrides((
+    primary: #09424d,
+    on-primary: #ffffff,
+    primary-container: #cfe6ea,
+    on-primary-container: #062f37,
+    surface: #ffffff,
+    background: #f3f6f6,
+    corner-small: 6px,
+    corner-medium: 8px,
+    corner-full: 6px,
+  ));
+}
+
+// --- Base ----------------------------------------------------------------
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--sgth-fuente);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--sgth-tinta);
+  background: var(--sgth-fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: var(--sgth-fuente);
+  color: var(--sgth-tinta);
+  line-height: 1.15;
+}
+
+// Escala tipográfica (1.25)
+h1 { font-size: 1.75rem; font-weight: 700; font-stretch: 88%; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-weight: 650; }
+h3 { font-size: 1rem; font-weight: 650; }
+
+a { color: var(--sgth-petroleo); }
+
+:focus-visible {
+  outline: 3px solid var(--sgth-verde);
+  outline-offset: 2px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+// Mensajes emergentes
+.sgth-aviso-error { --mat-snack-bar-container-color: var(--sgth-error); }
+.sgth-aviso-ok { --mat-snack-bar-container-color: var(--sgth-petroleo); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

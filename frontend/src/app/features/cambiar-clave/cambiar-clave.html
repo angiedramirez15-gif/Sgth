@@ -1,0 +1,57 @@
+<div class="pagina">
+  <div class="panel">
+    <img class="panel__logo" src="marca/logo-drim-duit.png" alt="DRIM DUIT" width="140" height="60">
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <h1>Cambiar clave</h1>
+      @if (obligatorio()) {
+        <p class="ayuda">
+          Hola, {{ nombre() }}. Por seguridad, antes de usar el sistema debe reemplazar la clave temporal por una clave personal.
+        </p>
+      } @else {
+        <p class="ayuda">Escriba su clave actual y la clave nueva que quiere usar.</p>
+      }
+
+      @if (error()) {
+        <p class="aviso" role="alert"><mat-icon>error</mat-icon>{{ error() }}</p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ obligatorio() ? 'Clave temporal' : 'Clave actual' }}</mat-label>
+        <input matInput type="password" formControlName="claveActual" autocomplete="current-password">
+        <mat-error>Escriba la clave {{ obligatorio() ? 'temporal' : 'actual' }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Clave nueva</mat-label>
+        <input matInput type="password" formControlName="claveNueva" autocomplete="new-password" aria-describedby="requisitos">
+        <mat-error>La clave nueva no cumple los requisitos</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Repita la clave nueva</mat-label>
+        <input matInput type="password" formControlName="confirmar" autocomplete="new-password">
+        <mat-error>Repita la clave nueva</mat-error>
+      </mat-form-field>
+
+      <ul id="requisitos" class="requisitos" aria-live="polite">
+        @for (r of requisitos(); track r.texto) {
+          <li [class.cumple]="r.cumple">
+            <mat-icon aria-hidden="true">{{ r.cumple ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <span>{{ r.texto }}</span>
+            <span class="lector">{{ r.cumple ? '(cumple)' : '(pendiente)' }}</span>
+          </li>
+        }
+      </ul>
+
+      <div class="acciones">
+        <button mat-button type="button" (click)="cancelar()">
+          {{ obligatorio() ? 'Cerrar sesión' : 'Cancelar' }}
+        </button>
+        <button mat-flat-button type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando…' : 'Guardar clave nueva' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

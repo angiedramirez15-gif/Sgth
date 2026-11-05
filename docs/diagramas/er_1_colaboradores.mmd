@@ -1,0 +1,105 @@
+erDiagram
+  colaboradores {
+    int id PK
+    int tipo_documento_id FK
+    varchar numero_documento
+    varchar nombres
+    varchar apellidos
+    enum sexo
+    date fecha_nacimiento
+    varchar telefono
+    varchar correo
+    varchar direccion
+    varchar ciudad_residencia
+    varchar contacto_emergencia_nombre
+    varchar contacto_emergencia_telefono
+    int cargo_id FK
+    int area_id FK
+    int jefe_id FK
+    date fecha_ingreso
+    enum tipo_contrato
+    date fecha_fin_contrato
+    decimal salario
+    enum derecho_dotacion
+    int eps_id FK
+    int afp_id FK
+    int arl_id FK
+    int ccf_id FK
+    tinyint nivel_riesgo_arl
+    varchar ruta_foto
+    enum estado
+    date fecha_retiro
+    varchar motivo_retiro
+  }
+  colaborador_tallas {
+    int colaborador_id PK,FK
+    enum tipo_talla PK
+    varchar talla
+  }
+  documentos {
+    int id PK
+    int colaborador_id FK
+    int tipo_documento_id FK
+    varchar descripcion
+    varchar nombre_original
+    varchar ruta_archivo
+    varchar mime_type
+    int tamano_bytes
+    date fecha_expedicion
+    date fecha_vencimiento
+    smallint version
+    int reemplaza_a_id FK
+    tinyint vigente
+  }
+  tipos_documento_expediente {
+    int id PK
+    varchar nombre UK
+    tinyint maneja_vencimiento
+    smallint dias_alerta
+    tinyint visible_sst
+    tinyint es_sensible
+  }
+  documentos_obligatorios_cargo {
+    int cargo_id PK,FK
+    int tipo_documento_id PK,FK
+  }
+  cargos {
+    int id PK
+    varchar nombre UK
+    int area_id FK
+    tinyint nivel_riesgo_arl
+  }
+  areas {
+    int id PK
+    varchar nombre UK
+  }
+  tipos_documento_identidad {
+    int id PK
+    varchar codigo UK
+    varchar nombre
+  }
+  entidades_seguridad_social {
+    int id PK
+    enum tipo
+    varchar nombre
+  }
+  usuarios {
+    int id PK
+    varchar usuario UK
+  }
+  tipos_documento_identidad ||--o{ colaboradores : "tipo_documento_id"
+  cargos ||--o{ colaboradores : "cargo_id"
+  areas ||--o{ colaboradores : "area_id"
+  colaboradores |o--o{ colaboradores : "jefe_id"
+  entidades_seguridad_social |o--o{ colaboradores : "eps_id"
+  entidades_seguridad_social |o--o{ colaboradores : "afp_id"
+  entidades_seguridad_social |o--o{ colaboradores : "arl_id"
+  entidades_seguridad_social |o--o{ colaboradores : "ccf_id"
+  colaboradores ||--o{ colaborador_tallas : "colaborador_id"
+  colaboradores ||--o{ documentos : "colaborador_id"
+  tipos_documento_expediente ||--o{ documentos : "tipo_documento_id"
+  documentos |o--o{ documentos : "reemplaza_a_id"
+  cargos ||--o{ documentos_obligatorios_cargo : "cargo_id"
+  tipos_documento_expediente ||--o{ documentos_obligatorios_cargo : "tipo_documento_id"
+  areas |o--o{ cargos : "area_id"
+  colaboradores |o--o{ usuarios : "colaborador_id"
