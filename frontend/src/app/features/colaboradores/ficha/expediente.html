@@ -1,0 +1,106 @@
+@if (cargando() && !datos()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando documentos" />
+}
+
+@if (datos(); as d) {
+  <div class="encabezado">
+    <p class="resumen">
+      {{ vigentes().length }} documento{{ vigentes().length === 1 ? '' : 's' }} vigente{{ vigentes().length === 1 ? '' : 's' }}
+    </p>
+    @if (puedeGestionar && !retirado()) {
+      <button mat-flat-button (click)="agregar()"><mat-icon>add</mat-icon>Agregar documento</button>
+    }
+  </div>
+
+  @if (d.faltantes.length) {
+    <section class="aviso" aria-labelledby="t-faltantes">
+      <h3 id="t-faltantes"><mat-icon>assignment_late</mat-icon>Faltan {{ d.faltantes.length }} documento{{ d.faltantes.length === 1 ? '' : 's' }} obligatorio{{ d.faltantes.length === 1 ? '' : 's' }} del cargo</h3>
+      <ul>
+        @for (f of d.faltantes; track f.id) {
+          <li>
+            {{ f.nombre }}
+            @if (puedeGestionar && !retirado()) {
+              <button mat-button (click)="agregar(f.id)">Cargar</button>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <div class="sgth-marco">
+    <table class="sgth-tabla">
+      <thead>
+        <tr>
+          <th scope="col">Documento</th>
+          <th scope="col">Expedición</th>
+          <th scope="col">Vencimiento</th>
+          <th scope="col">Cargado</th>
+          <th scope="col" class="acciones"><span class="lector">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (doc of vigentes(); track doc.id) {
+          <tr>
+            <td>
+              <button type="button" class="enlace" (click)="ver(doc)">
+                <mat-icon>{{ doc.mimeType === 'application/pdf' ? 'picture_as_pdf' : 'image' }}</mat-icon>
+                <span>
+                  <span class="doc__tipo">{{ doc.tipoDocumento }}
+                    @if (doc.esSensible) { <mat-icon class="candado" aria-label="Dato sensible">lock</mat-icon> }
+                  </span>
+                  <span class="secundario">{{ doc.descripcion || doc.nombreOriginal }}, {{ tamano(doc.tamanoBytes) }}{{ doc.version > 1 ? ', versión ' + doc.version : '' }}</span>
+                </span>
+              </button>
+            </td>
+            <td>{{ doc.fechaExpedicion ? (doc.fechaExpedicion | date: 'd MMM y') : '—' }}</td>
+            <td>
+              @switch (doc.estadoVencimiento) {
+                @case ('VENCIDO') { <span class="sgth-estado sgth-estado--error">Venció el {{ doc.fechaVencimiento | date: 'd MMM y' }}</span> }
+                @case ('POR_VENCER') { <span class="sgth-estado sgth-estado--alerta">Vence en {{ doc.diasParaVencer }} día{{ doc.diasParaVencer === 1 ? '' : 's' }}</span> }
+                @case ('AL_DIA') { {{ doc.fechaVencimiento | date: 'd MMM y' }} }
+                @default { <span class="secundario">No vence</span> }
+              }
+            </td>
+            <td>{{ doc.creadoEn.replace(' ', 'T') | date: 'd MMM y' }}<span class="secundario">{{ doc.creadoPor }}</span></td>
+            <td class="acciones">
+              <button mat-icon-button [matMenuTriggerFor]="menu" [attr.aria-label]="'Opciones de ' + doc.tipoDocumento"><mat-icon>more_vert</mat-icon></button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="ver(doc)"><mat-icon>visibility</mat-icon>Ver</button>
+                <button mat-menu-item (click)="descargar(doc)"><mat-icon>download</mat-icon>Descargar</button>
+                @if (puedeGestionar && !retirado()) {
+                  <button mat-menu-item (click)="reemplazar(doc)"><mat-icon>upload</mat-icon>Reemplazar por versión nueva</button>
+                  <button mat-menu-item (click)="inactivar(doc)"><mat-icon>delete</mat-icon>Quitar (cargado por error)</button>
+                }
+              </mat-menu>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="sgth-vacio">
+              Este colaborador aún no tiene documentos.
+              @if (puedeGestionar && !retirado()) { Use "Agregar documento" para cargar el primero. }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (anteriores().length) {
+    <button mat-button class="anteriores" (click)="verAnteriores.set(!verAnteriores())" [attr.aria-expanded]="verAnteriores()">
+      <mat-icon>{{ verAnteriores() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      Versiones anteriores ({{ anteriores().length }})
+    </button>
+    @if (verAnteriores()) {
+      <ul class="lista-anteriores">
+        @for (doc of anteriores(); track doc.id) {
+          <li>
+            <button type="button" class="enlace" (click)="ver(doc)">{{ doc.tipoDocumento }}, versión {{ doc.version }}</button>
+            <span class="secundario">Cargado el {{ doc.creadoEn.replace(' ', 'T') | date: 'd MMM y' }} por {{ doc.creadoPor }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+}

@@ -1,0 +1,95 @@
+.importacion { max-width: 900px; }
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  text-decoration: none;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.intro { max-width: 68ch; margin: 6px 0 24px; color: var(--sgth-tinta-suave); }
+
+// Los pasos sí son una secuencia: se numeran
+.pasos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+
+.paso {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 14px;
+  padding: 18px 22px 18px 72px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+  counter-increment: paso;
+
+  &::before {
+    content: counter(paso);
+    position: absolute;
+    left: 22px;
+    top: 18px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sgth-petroleo);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  h2 { font-size: 1rem; }
+  p { margin: 4px 0 0; max-width: 56ch; font-size: 0.9rem; color: var(--sgth-tinta-suave); }
+
+  &--resultado { display: block; }
+}
+
+.paso__titulo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+
+.archivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.oculto { display: none; }
+
+.estado-trabajo, .espera { font-size: 0.9rem; color: var(--sgth-tinta-suave); }
+
+.aviso {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 6px;
+
+  > mat-icon { flex: none; }
+  &--ok { border-left: 4px solid var(--sgth-verde-texto); background: #e9f8ee; color: #14532b; }
+  &--alerta { border-left: 4px solid var(--sgth-ambar); background: var(--sgth-ambar-fondo); color: #6b4100; }
+  &--error { border-left: 4px solid var(--sgth-error); background: #fdecea; color: var(--sgth-error); }
+}
+
+.vista-previa { margin: 8px 0 0; padding-left: 18px; font-size: 0.9rem; }
+
+.acciones { display: flex; justify-content: flex-end; gap: 8px; }
+
+.fila { font-weight: 700; color: var(--sgth-petroleo); }
+.errores { margin: 0; padding-left: 16px; font-size: 0.875rem; li + li { margin-top: 2px; } }
+
+@media (max-width: 600px) {
+  .paso { padding-left: 22px; padding-top: 62px; }
+}

@@ -1,0 +1,116 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Colaboradores</h1>
+      <p>{{ conteo().activos }} activos y {{ conteo().retirados }} retirados</p>
+    </div>
+    @if (puedeGestionar) {
+      <div class="acciones-encabezado">
+        <a mat-stroked-button routerLink="/colaboradores/importar"><mat-icon>upload_file</mat-icon>Importar desde Excel</a>
+        <a mat-flat-button routerLink="/colaboradores/nuevo"><mat-icon>person_add</mat-icon>Nuevo colaborador</a>
+      </div>
+    }
+  </header>
+
+  <div class="sgth-filtros">
+    <mat-form-field class="busqueda" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar por nombre, documento o cargo</mat-label>
+      <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Área</mat-label>
+      <mat-select [ngModel]="area()" (ngModelChange)="area.set($event); cargo.set('')">
+        <mat-option value="">Todas</mat-option>
+        @for (a of areas(); track a) { <mat-option [value]="a">{{ a }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Cargo</mat-label>
+      <mat-select [ngModel]="cargo()" (ngModelChange)="cargo.set($event)">
+        <mat-option value="">Todos</mat-option>
+        @for (c of cargos(); track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-button-toggle-group [value]="estado()" (change)="estado.set($event.value)" aria-label="Estado" hideSingleSelectionIndicator>
+      <mat-button-toggle value="ACTIVO">Activos</mat-button-toggle>
+      <mat-button-toggle value="RETIRADO">Retirados</mat-button-toggle>
+      <mat-button-toggle value="TODOS">Todos</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="sgth-marco">
+    @if (cargando()) {
+      <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando colaboradores" />
+    }
+    <table class="sgth-tabla">
+      <thead>
+        <tr>
+          <th scope="col">Colaborador</th>
+          <th scope="col">Cargo</th>
+          <th scope="col">Ingreso</th>
+          <th scope="col">Contrato</th>
+          <th scope="col">Documentos</th>
+          <th scope="col">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of filtradas(); track f.id) {
+          <tr class="fila" [class.inactivo]="f.estado === 'RETIRADO'" (click)="abrir(f)">
+            <td>
+              <a class="persona" [routerLink]="['/colaboradores', f.id]" (click)="$event.stopPropagation()">
+                <app-avatar [colaboradorId]="f.id" [tieneFoto]="f.tieneFoto" [nombre]="f.nombres + ' ' + f.apellidos" />
+                <span>
+                  <span class="persona__nombre">{{ f.nombres }} {{ f.apellidos }}</span>
+                  <span class="secundario">{{ f.tipoDocumento }} {{ f.numeroDocumento }}</span>
+                </span>
+              </a>
+            </td>
+            <td>{{ f.cargo }}<span class="secundario">{{ f.area }}</span></td>
+            <td>{{ f.fechaIngreso | date: 'd MMM y' }}</td>
+            <td>
+              {{ contrato(f.tipoContrato) }}
+              @if (f.fechaFinContrato) { <span class="secundario">Hasta {{ f.fechaFinContrato | date: 'd MMM y' }}</span> }
+            </td>
+            <td>
+              @if (f.documentosVencidos) {
+                <span class="sgth-estado sgth-estado--alerta">{{ f.documentosVencidos }} vencido{{ f.documentosVencidos > 1 ? 's' : '' }}</span>
+              }
+              @if (f.documentosFaltantes) {
+                <span class="sgth-estado sgth-estado--alerta">{{ f.documentosFaltantes }} faltante{{ f.documentosFaltantes > 1 ? 's' : '' }}</span>
+              }
+              @if (!f.documentosVencidos && !f.documentosFaltantes) {
+                <span class="secundario">Al día</span>
+              }
+            </td>
+            <td>
+              <span class="sgth-estado" [class.sgth-estado--activo]="f.estado === 'ACTIVO'" [class.sgth-estado--inactivo]="f.estado === 'RETIRADO'">
+                {{ f.estado === 'ACTIVO' ? 'Activo' : 'Retirado' }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          @if (!cargando()) {
+            <tr>
+              <td colspan="6" class="sgth-vacio">
+                @if (error()) {
+                  No se pudo cargar la lista. <button mat-button (click)="cargar()">Intentar de nuevo</button>
+                } @else if (!filas().length) {
+                  Aún no hay colaboradores registrados.
+                  @if (puedeGestionar) {
+                    <span class="vacio-acciones">
+                      <a mat-flat-button routerLink="/colaboradores/nuevo">Registrar el primero</a>
+                      <a mat-stroked-button routerLink="/colaboradores/importar">Importar desde Excel</a>
+                    </span>
+                  }
+                } @else {
+                  Ningún colaborador coincide con los filtros. <button mat-button (click)="limpiarFiltros()">Quitar filtros</button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -190,6 +190,7 @@ a { color: var(--sgth-petroleo); }
   &--activo { color: var(--sgth-verde-texto); }
   &--inactivo { color: #7d8c8f; }
   &--alerta { color: var(--sgth-ambar); }
+  &--error { color: var(--sgth-error); }
 }
 
 .sgth-etiqueta {

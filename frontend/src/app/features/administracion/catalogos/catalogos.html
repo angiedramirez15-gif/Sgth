@@ -79,6 +79,9 @@
                     </button>
                     <mat-menu #menu="matMenu" xPosition="before">
                       <button mat-menu-item (click)="editar(r)"><mat-icon>edit</mat-icon>Editar</button>
+                      @if (d.clave === 'cargos') {
+                        <button mat-menu-item (click)="obligatorios(r)"><mat-icon>assignment</mat-icon>Documentos obligatorios</button>
+                      }
                       <button mat-menu-item (click)="cambiarEstado(r)">
                         <mat-icon>{{ r.activo ? 'block' : 'check_circle' }}</mat-icon>{{ r.activo ? 'Inactivar' : 'Activar' }}
                       </button>

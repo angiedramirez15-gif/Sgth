@@ -1,0 +1,93 @@
+<div class="sgth-pagina ficha">
+  <a class="volver" routerLink="/colaboradores"><mat-icon>arrow_back</mat-icon>Colaboradores</a>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando ficha" />
+  } @else if (noExiste()) {
+    <p class="sgth-vacio">No se encontró el colaborador. <a routerLink="/colaboradores">Volver a la lista</a></p>
+  } @else if (ficha(); as f) {
+    <header class="cabecera" [class.cabecera--retirado]="f.estado === 'RETIRADO'">
+      <div class="cabecera__foto">
+        <app-avatar [colaboradorId]="f.id" [tieneFoto]="f.tieneFoto" [nombre]="nombre()" [tamano]="88" [version]="versionFoto()" />
+        @if (puedeGestionar && f.estado === 'ACTIVO') {
+          <label class="cambiar-foto" [class.cambiar-foto--ocupado]="subiendoFoto()">
+            <input type="file" accept="image/jpeg,image/png" (change)="cambiarFoto($event)" [disabled]="subiendoFoto()">
+            <mat-icon>{{ subiendoFoto() ? 'hourglass_top' : 'photo_camera' }}</mat-icon>
+            <span class="lector">{{ f.tieneFoto ? 'Cambiar foto' : 'Agregar foto' }}</span>
+          </label>
+        }
+      </div>
+      <div class="cabecera__texto">
+        <h1>{{ nombre() }}</h1>
+        <p class="cabecera__cargo">{{ f.cargoNombre }}, {{ f.areaNombre }}</p>
+        <p class="cabecera__meta">
+          <span>{{ f.tipoDocumentoCodigo }} {{ f.numeroDocumento }}</span>
+          @if (f.estado === 'ACTIVO') {
+            <span class="sgth-estado sgth-estado--activo">Activo desde {{ f.fechaIngreso | date: 'd MMM y' }}</span>
+          } @else {
+            <span class="sgth-estado sgth-estado--inactivo">Retirado el {{ f.fechaRetiro | date: 'd MMM y' }}</span>
+          }
+        </p>
+        @if (f.estado === 'RETIRADO' && f.motivoRetiro) {
+          <p class="cabecera__retiro">Motivo del retiro: {{ f.motivoRetiro }}</p>
+        }
+      </div>
+      @if (puedeGestionar) {
+        <div class="cabecera__acciones">
+          @if (f.estado === 'ACTIVO') {
+            <a mat-flat-button [routerLink]="['/colaboradores', f.id, 'editar']"><mat-icon>edit</mat-icon>Editar</a>
+          }
+          <button mat-icon-button [matMenuTriggerFor]="mas" aria-label="Más opciones"><mat-icon>more_vert</mat-icon></button>
+          <mat-menu #mas="matMenu" xPosition="before">
+            @if (f.estado === 'ACTIVO') {
+              <button mat-menu-item (click)="retirar()"><mat-icon>person_remove</mat-icon>Registrar retiro</button>
+            } @else {
+              <button mat-menu-item (click)="reactivar()"><mat-icon>person_check</mat-icon>Reactivar</button>
+            }
+          </mat-menu>
+        </div>
+      }
+    </header>
+
+    <mat-tab-group animationDuration="0ms" mat-stretch-tabs="false" mat-align-tabs="start" class="pestanas">
+      <mat-tab label="Datos">
+        <div class="datos">
+          @for (s of secciones(); track s.titulo) {
+            <section class="seccion" [class.seccion--sensible]="s.sensible" [attr.aria-labelledby]="'s-' + $index">
+              <h2 [id]="'s-' + $index">
+                @if (s.sensible) { <mat-icon>lock</mat-icon> }
+                {{ s.titulo }}
+              </h2>
+              <dl>
+                @for (d of s.datos; track d.etiqueta) {
+                  <div class="dato" [class.dato--ancho]="d.ancho">
+                    <dt>{{ d.etiqueta }}</dt>
+                    <dd [class.vacio]="d.valor === null || d.valor === undefined || d.valor === ''">
+                      {{ d.valor === null || d.valor === undefined || d.valor === '' ? 'Sin registrar' : d.valor }}
+                    </dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+        </div>
+      </mat-tab>
+
+      @if (puedeVerDocumentos) {
+        <mat-tab [label]="totalDocumentos() === null ? 'Documentos' : 'Documentos (' + totalDocumentos() + ')'">
+          <div class="pestana">
+            <app-expediente [colaboradorId]="f.id" [retirado]="f.estado === 'RETIRADO'" (cambio)="totalDocumentos.set($event)" />
+          </div>
+        </mat-tab>
+      }
+
+      <mat-tab label="Entregas">
+        <div class="pestana proximo">
+          <mat-icon>inventory_2</mat-icon>
+          <p>Aquí aparecerán la dotación, los EPP, los equipos y los muebles entregados a {{ f.nombres }}, con sus actas.
+             Se habilita en las fases 4 y 5.</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</div>

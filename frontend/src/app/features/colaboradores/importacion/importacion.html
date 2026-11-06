@@ -1,0 +1,91 @@
+<div class="sgth-pagina importacion">
+  <a class="volver" routerLink="/colaboradores"><mat-icon>arrow_back</mat-icon>Colaboradores</a>
+  <h1>Importar colaboradores desde Excel</h1>
+  <p class="intro">Para registrar de una vez a los colaboradores actuales. El sistema revisa todo el archivo antes de guardar: si hay un error, no se guarda nada.</p>
+
+  <ol class="pasos">
+    <li class="paso">
+      <div>
+        <h2>Descargue la plantilla</h2>
+        <p>Trae listas desplegables con los cargos, áreas, EPS, ARL y demás catálogos del sistema. Créelos en Administración, Catálogos antes de descargarla.</p>
+      </div>
+      <button mat-stroked-button (click)="descargarPlantilla()" [disabled]="trabajando() === 'plantilla'">
+        <mat-icon>download</mat-icon>{{ trabajando() === 'plantilla' ? 'Preparando…' : 'Descargar plantilla' }}
+      </button>
+    </li>
+
+    <li class="paso">
+      <div>
+        <h2>Llénela y súbala para revisarla</h2>
+        <p>Una fila por colaborador. Las columnas con asterisco son obligatorias.</p>
+      </div>
+      <input #selector type="file" class="oculto" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="elegir($event)">
+      <button mat-flat-button type="button" (click)="selector.click()" [disabled]="!!trabajando()">
+        <mat-icon>upload_file</mat-icon>{{ archivo() ? 'Subir otro archivo' : 'Seleccionar archivo' }}
+      </button>
+    </li>
+
+    <li class="paso paso--resultado">
+      <div class="paso__titulo">
+        <h2>Revise el resultado e importe</h2>
+        @if (archivo(); as a) { <p class="archivo"><mat-icon>description</mat-icon>{{ a.name }}</p> }
+      </div>
+
+      @if (trabajando() === 'revisando' || trabajando() === 'importando') {
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="trabajando() === 'revisando' ? 'Revisando archivo' : 'Importando'" />
+        <p class="estado-trabajo">{{ trabajando() === 'revisando' ? 'Revisando el archivo…' : 'Registrando colaboradores…' }}</p>
+      }
+
+      @if (error()) {
+        <p class="aviso aviso--error" role="alert"><mat-icon>error</mat-icon>{{ error() }}</p>
+      }
+
+      @if (resultado(); as r) {
+        @if (!r.errores.length) {
+          <div class="aviso aviso--ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <div>
+              <strong>El archivo está correcto: {{ r.validas }} colaborador{{ r.validas === 1 ? '' : 'es' }} listo{{ r.validas === 1 ? '' : 's' }} para importar.</strong>
+              <ul class="vista-previa">
+                @for (v of r.vistaPrevia; track v.fila) { <li>{{ v.nombre }}, {{ v.documento }}</li> }
+                @if (r.validas > r.vistaPrevia.length) { <li>y {{ r.validas - r.vistaPrevia.length }} más</li> }
+              </ul>
+            </div>
+          </div>
+          <div class="acciones">
+            <button mat-button (click)="reiniciar()">Cancelar</button>
+            <button mat-flat-button (click)="importar()" [disabled]="!!trabajando()">
+              <mat-icon>group_add</mat-icon>Importar {{ r.validas }} colaborador{{ r.validas === 1 ? '' : 'es' }}
+            </button>
+          </div>
+        } @else {
+          <div class="aviso aviso--alerta" role="status">
+            <mat-icon>warning</mat-icon>
+            <div>
+              <strong>{{ r.errores.length }} de {{ r.total }} fila{{ r.total === 1 ? '' : 's' }} tiene{{ r.errores.length === 1 ? '' : 'n' }} errores.</strong>
+              No se guardó nada. Corrija estas filas en el Excel y súbalo de nuevo.
+            </div>
+          </div>
+          <div class="sgth-marco">
+            <table class="sgth-tabla">
+              <thead>
+                <tr><th scope="col">Fila</th><th scope="col">Colaborador</th><th scope="col">Qué corregir</th></tr>
+              </thead>
+              <tbody>
+                @for (e of r.errores; track e.fila) {
+                  <tr>
+                    <td class="fila">{{ e.fila }}</td>
+                    <td>{{ e.nombre || 'Sin nombre' }}<span class="secundario">{{ e.documento }}</span></td>
+                    <td><ul class="errores">@for (m of e.errores; track m) { <li>{{ m }}</li> }</ul></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      } @else if (!trabajando() && !error()) {
+        <p class="espera">Cuando suba el archivo, aquí verá los colaboradores listos o los errores por corregir.</p>
+      }
+    </li>
+  </ol>
+</div>

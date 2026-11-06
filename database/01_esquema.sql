@@ -3,7 +3,8 @@
 --  DRIM DUIT S.A.S.
 --  Script 01: esquema de base de datos
 --  Motor: MariaDB 10.6 o superior (probado con sintaxis de MariaDB 11)
---  Versión del modelo: 1.3  -  Fecha: 05/11/2026
+--  Versión del modelo: 1.3 + cambio 004  -  Fecha: 06/11/2026
+--  Instalación nueva: este script ya incluye el cambio 004 (no hace falta ejecutarlo).
 --
 --  Cómo ejecutarlo en HeidiSQL:
 --    1. Conectarse al servidor MariaDB con el usuario root.
@@ -181,6 +182,11 @@ CREATE TABLE colaboradores (
   apellidos                   VARCHAR(100) NOT NULL,
   sexo                        ENUM('M','F') NOT NULL COMMENT 'Ajusta el texto de las actas',
   fecha_nacimiento            DATE         NULL,
+  tipo_sangre                 ENUM('O+','O-','A+','A-','B+','B-','AB+','AB-') NULL COMMENT 'Dato de salud: visible para TH, Administrador y SST',
+  estado_civil                ENUM('SOLTERO','CASADO','UNION_LIBRE','SEPARADO','DIVORCIADO','VIUDO') NULL,
+  numero_hijos                TINYINT UNSIGNED NULL,
+  personas_a_cargo            TINYINT UNSIGNED NULL,
+  nivel_educativo             ENUM('PRIMARIA','BACHILLER','TECNICO','TECNOLOGO','PROFESIONAL','ESPECIALIZACION','MAESTRIA','DOCTORADO') NULL,
   telefono                    VARCHAR(30)  NULL,
   correo                      VARCHAR(150) NULL,
   direccion                   VARCHAR(200) NULL,
@@ -194,11 +200,15 @@ CREATE TABLE colaboradores (
   tipo_contrato               ENUM('INDEFINIDO','FIJO','OBRA_LABOR','APRENDIZAJE','PRESTACION_SERVICIOS') NOT NULL,
   fecha_fin_contrato          DATE         NULL COMMENT 'Genera alerta de contrato por vencer',
   salario                     DECIMAL(12,2) NULL COMMENT 'Dato sensible',
+  banco                       VARCHAR(80)  NULL COMMENT 'Dato sensible',
+  tipo_cuenta                 ENUM('AHORROS','CORRIENTE') NULL COMMENT 'Dato sensible',
+  numero_cuenta               VARCHAR(30)  NULL COMMENT 'Dato sensible',
   derecho_dotacion            ENUM('AUTO','SI','NO') NOT NULL DEFAULT 'AUTO' COMMENT 'AUTO = según salario y antigüedad (RN-06)',
   eps_id                      INT UNSIGNED NULL,
   afp_id                      INT UNSIGNED NULL,
   arl_id                      INT UNSIGNED NULL,
   ccf_id                      INT UNSIGNED NULL,
+  cesantias_id                INT UNSIGNED NULL,
   nivel_riesgo_arl            TINYINT UNSIGNED NULL,
   ruta_foto                   VARCHAR(500) NULL,
   estado                      ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
@@ -221,6 +231,7 @@ CREATE TABLE colaboradores (
   CONSTRAINT fk_colab_afp     FOREIGN KEY (afp_id)   REFERENCES entidades_seguridad_social (id),
   CONSTRAINT fk_colab_arl     FOREIGN KEY (arl_id)   REFERENCES entidades_seguridad_social (id),
   CONSTRAINT fk_colab_ccf     FOREIGN KEY (ccf_id)   REFERENCES entidades_seguridad_social (id),
+  CONSTRAINT fk_colab_cesantias FOREIGN KEY (cesantias_id) REFERENCES entidades_seguridad_social (id),
   CONSTRAINT ck_colab_riesgo  CHECK (nivel_riesgo_arl IS NULL OR nivel_riesgo_arl BETWEEN 1 AND 5),
   CONSTRAINT ck_colab_retiro  CHECK (estado = 'ACTIVO' OR fecha_retiro IS NOT NULL)
 ) ENGINE=InnoDB COMMENT='Datos personales y laborales';

@@ -23,3 +23,6 @@ respaldos/
 Thumbs.db
 *.log
 .idea/
+
+# Caché de compilación de TypeScript
+*.tsbuildinfo

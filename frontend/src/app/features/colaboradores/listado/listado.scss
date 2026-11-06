@@ -1,0 +1,26 @@
+.acciones-encabezado { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.fila { cursor: pointer; }
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .persona__nombre { color: var(--sgth-petroleo); text-decoration: underline; }
+}
+
+.persona__nombre { display: block; font-weight: 600; }
+
+td .sgth-estado + .sgth-estado { margin-left: 10px; }
+
+.vacio-acciones {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+mat-button-toggle-group { --mat-standard-button-toggle-height: 40px; }

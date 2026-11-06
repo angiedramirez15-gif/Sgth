@@ -1,0 +1,251 @@
+<div class="sgth-pagina formulario">
+  <a class="volver" [routerLink]="edicion() ? ['/colaboradores', id()] : ['/colaboradores']">
+    <mat-icon>arrow_back</mat-icon>{{ edicion() ? 'Volver a la ficha' : 'Volver a colaboradores' }}
+  </a>
+  <h1>{{ edicion() ? 'Editar colaborador' : 'Nuevo colaborador' }}</h1>
+  @if (ficha(); as f) { <p class="subtitulo">{{ f.nombres }} {{ f.apellidos }}</p> }
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+  } @else if (opciones(); as op) {
+    @if (error()) {
+      <p class="aviso-error" role="alert"><mat-icon>error</mat-icon>{{ error() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <!-- Identificación y datos personales -->
+      <section class="bloque" aria-labelledby="b-personal">
+        <h2 id="b-personal">Datos personales</h2>
+        <div class="rejilla">
+          <mat-form-field>
+            <mat-label>Tipo de documento</mat-label>
+            <mat-select formControlName="tipoDocumentoId">
+              @for (t of op.tiposDocumento; track t.id) { <mat-option [value]="t.id">{{ t.nombre }}</mat-option> }
+            </mat-select>
+            <mat-error>Seleccione el tipo de documento</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Número de documento</mat-label>
+            <input matInput formControlName="numeroDocumento" autocomplete="off" inputmode="text">
+            <mat-error>Escriba el número de documento</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Sexo</mat-label>
+            <mat-select formControlName="sexo">
+              @for (o of op.listas.sexo; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+            </mat-select>
+            <mat-hint>Ajusta el texto de las actas</mat-hint>
+            <mat-error>Seleccione el sexo</mat-error>
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Nombres</mat-label>
+            <input matInput formControlName="nombres" autocomplete="off">
+            <mat-error>Escriba los nombres</mat-error>
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Apellidos</mat-label>
+            <input matInput formControlName="apellidos" autocomplete="off">
+            <mat-error>Escriba los apellidos</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Fecha de nacimiento</mat-label>
+            <input matInput type="date" formControlName="fechaNacimiento">
+          </mat-form-field>
+          @if (verSalud()) {
+            <mat-form-field>
+              <mat-label>Tipo de sangre (RH)</mat-label>
+              <mat-select formControlName="tipoSangre">
+                <mat-option value="">Sin registrar</mat-option>
+                @for (o of op.listas.tipoSangre; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          }
+          <mat-form-field>
+            <mat-label>Estado civil</mat-label>
+            <mat-select formControlName="estadoCivil">
+              <mat-option value="">Sin registrar</mat-option>
+              @for (o of op.listas.estadoCivil; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Número de hijos</mat-label>
+            <input matInput type="number" min="0" max="30" formControlName="numeroHijos">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Personas a cargo</mat-label>
+            <input matInput type="number" min="0" max="30" formControlName="personasACargo">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Nivel educativo</mat-label>
+            <mat-select formControlName="nivelEducativo">
+              <mat-option value="">Sin registrar</mat-option>
+              @for (o of op.listas.nivelEducativo; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="bloque" aria-labelledby="b-contacto">
+        <h2 id="b-contacto">Contacto</h2>
+        <div class="rejilla">
+          <mat-form-field>
+            <mat-label>Teléfono</mat-label>
+            <input matInput type="tel" formControlName="telefono" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Correo</mat-label>
+            <input matInput type="email" formControlName="correo" autocomplete="off">
+            <mat-error>El correo no es válido</mat-error>
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="direccion" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Ciudad de residencia</mat-label>
+            <input matInput formControlName="ciudadResidencia" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Contacto de emergencia</mat-label>
+            <input matInput formControlName="contactoEmergenciaNombre" autocomplete="off">
+            <mat-hint>Nombre y parentesco, por ejemplo: Rosa Gómez (madre)</mat-hint>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Teléfono de emergencia</mat-label>
+            <input matInput type="tel" formControlName="contactoEmergenciaTelefono" autocomplete="off">
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="bloque" aria-labelledby="b-laboral">
+        <h2 id="b-laboral">Datos laborales</h2>
+        <div class="rejilla">
+          <mat-form-field class="doble">
+            <mat-label>Cargo</mat-label>
+            <mat-select formControlName="cargoId">
+              @for (c of op.cargos; track c.id) { <mat-option [value]="c.id">{{ c.nombre }}</mat-option> }
+            </mat-select>
+            @if (!op.cargos.length) { <mat-hint>Primero cree los cargos en Administración, Catálogos</mat-hint> }
+            <mat-error>Seleccione el cargo</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Área</mat-label>
+            <mat-select formControlName="areaId">
+              @for (a of op.areas; track a.id) { <mat-option [value]="a.id">{{ a.nombre }}</mat-option> }
+            </mat-select>
+            <mat-error>Seleccione el área</mat-error>
+          </mat-form-field>
+          <mat-form-field class="doble">
+            <mat-label>Jefe inmediato</mat-label>
+            <mat-select formControlName="jefeId">
+              <mat-option [value]="null">Sin asignar</mat-option>
+              @for (j of jefes(); track j.id) { <mat-option [value]="j.id">{{ j.nombre }} ({{ j.cargo }})</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Fecha de ingreso</mat-label>
+            <input matInput type="date" formControlName="fechaIngreso">
+            <mat-error>Escriba la fecha de ingreso</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Tipo de contrato</mat-label>
+            <mat-select formControlName="tipoContrato">
+              @for (o of op.listas.tipoContrato; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+            </mat-select>
+            <mat-error>Seleccione el tipo de contrato</mat-error>
+          </mat-form-field>
+          <mat-form-field [class.campo-error]="form.touched && (form.hasError('finRequerido') || form.hasError('finAntesDeIngreso'))">
+            <mat-label>Fecha fin de contrato{{ requiereFin() ? '' : ' (si aplica)' }}</mat-label>
+            <input matInput type="date" formControlName="fechaFinContrato">
+            @if (form.touched && form.hasError('finRequerido')) {
+              <mat-hint class="texto-error">Obligatoria para este tipo de contrato</mat-hint>
+            } @else if (form.touched && form.hasError('finAntesDeIngreso')) {
+              <mat-hint class="texto-error">No puede ser anterior a la fecha de ingreso</mat-hint>
+            } @else {
+              <mat-hint>Genera alerta antes de vencer</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Derecho a dotación</mat-label>
+            <mat-select formControlName="derechoDotacion">
+              @for (o of op.listas.derechoDotacion; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="bloque" aria-labelledby="b-ss">
+        <h2 id="b-ss">Seguridad social</h2>
+        <div class="rejilla">
+          @for (e of [{ c: 'epsId', t: 'EPS', n: 'EPS' }, { c: 'afpId', t: 'AFP', n: 'Fondo de pensiones' }, { c: 'arlId', t: 'ARL', n: 'ARL' }, { c: 'ccfId', t: 'CCF', n: 'Caja de compensación' }, { c: 'cesantiasId', t: 'CESANTIAS', n: 'Fondo de cesantías' }]; track e.c) {
+            <mat-form-field>
+              <mat-label>{{ e.n }}</mat-label>
+              <mat-select [formControlName]="e.c">
+                <mat-option [value]="null">Sin registrar</mat-option>
+                @for (x of entidades(e.t); track x.id) { <mat-option [value]="x.id">{{ x.nombre }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          }
+          <mat-form-field>
+            <mat-label>Nivel de riesgo ARL</mat-label>
+            <mat-select formControlName="nivelRiesgoArl">
+              <mat-option [value]="null">Sin registrar</mat-option>
+              @for (n of [1, 2, 3, 4, 5]; track n) { <mat-option [value]="n">Riesgo {{ n }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section class="bloque" aria-labelledby="b-tallas" formGroupName="tallas">
+        <h2 id="b-tallas">Tallas</h2>
+        <p class="nota">Se usan para sugerir la dotación y los EPP.</p>
+        <div class="rejilla rejilla--tallas">
+          @for (t of op.listas.tipoTalla; track t.valor) {
+            <mat-form-field>
+              <mat-label>{{ t.etiqueta }}</mat-label>
+              <input matInput [formControlName]="t.valor" maxlength="10" autocomplete="off">
+            </mat-form-field>
+          }
+        </div>
+      </section>
+
+      @if (verSensibles()) {
+        <section class="bloque bloque--sensible" aria-labelledby="b-sensible">
+          <h2 id="b-sensible"><mat-icon>lock</mat-icon>Salario y datos bancarios</h2>
+          <p class="nota">Datos sensibles: solo los ven Talento Humano y el Administrador, y cada consulta queda registrada.</p>
+          <div class="rejilla">
+            <mat-form-field>
+              <mat-label>Salario mensual</mat-label>
+              <span matTextPrefix>$&nbsp;</span>
+              <input matInput type="number" min="0" formControlName="salario">
+              <mat-hint>Define el derecho a dotación</mat-hint>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Banco</mat-label>
+              <input matInput formControlName="banco" autocomplete="off">
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Tipo de cuenta</mat-label>
+              <mat-select formControlName="tipoCuenta">
+                <mat-option value="">Sin registrar</mat-option>
+                @for (o of op.listas.tipoCuenta; track o.valor) { <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Número de cuenta</mat-label>
+              <input matInput formControlName="numeroCuenta" inputmode="numeric" autocomplete="off">
+              <mat-error>Solo números</mat-error>
+            </mat-form-field>
+          </div>
+        </section>
+      }
+
+      <div class="barra-acciones">
+        <button mat-button type="button" (click)="cancelar()">Cancelar</button>
+        <button mat-flat-button type="submit" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : edicion() ? 'Guardar cambios' : 'Registrar colaborador' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

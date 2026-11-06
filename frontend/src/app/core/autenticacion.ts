@@ -59,7 +59,7 @@ export function mensajeDeError(error: unknown, porDefecto = 'No se pudo completa
   if (error instanceof HttpErrorResponse) {
     if (error.status === 0) return 'No hay conexión con el servidor del SGTH. Verifique que esté encendido.';
     const m = error.error?.message;
-    if (Array.isArray(m)) return m[0];
+    if (Array.isArray(m)) return m.join('. ');
     if (typeof m === 'string') return m;
   }
   return porDefecto;

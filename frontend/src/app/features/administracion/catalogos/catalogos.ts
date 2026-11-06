@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AvisosService } from '../../../shared/avisos.service';
 import { AdministracionService, type CampoCatalogo, type DefinicionCatalogo, type RegistroCatalogo } from '../administracion.service';
+import { ObligatoriosDialogo, type DatosObligatorios } from './obligatorios-dialogo';
 import { RegistroDialogo, type DatosRegistroDialogo } from './registro-dialogo';
 
 function sinTildes(t: string) {
@@ -109,6 +110,15 @@ export class Catalogos implements OnInit {
 
   async editar(r: RegistroCatalogo) {
     await this.abrir(r);
+  }
+
+  async obligatorios(r: RegistroCatalogo) {
+    const ref = this.dialogo.open<ObligatoriosDialogo, DatosObligatorios, boolean>(ObligatoriosDialogo, {
+      data: { cargoId: r.id, cargo: String(r['nombre']) },
+      width: '560px',
+      maxWidth: '95vw',
+    });
+    if (await firstValueFrom(ref.afterClosed())) this.avisos.exito('Documentos obligatorios guardados');
   }
 
   async cambiarEstado(r: RegistroCatalogo) {
