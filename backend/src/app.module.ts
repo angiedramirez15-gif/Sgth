@@ -4,6 +4,9 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AuthModule } from './auth/auth.module.js';
+import { CatalogosModule } from './catalogos/catalogos.module.js';
+import { ConfiguracionController } from './configuracion/configuracion.controller.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
 import { CompartidoModule } from './common/compartido.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { SaludController } from './salud/salud.controller.js';
@@ -23,8 +26,10 @@ if (!servirFrontend.length) {
     DatabaseModule,
     CompartidoModule,
     AuthModule,
+    UsuariosModule,
+    CatalogosModule,
     ...servirFrontend,
   ],
-  controllers: [SaludController],
+  controllers: [SaludController, ConfiguracionController],
 })
 export class AppModule {}

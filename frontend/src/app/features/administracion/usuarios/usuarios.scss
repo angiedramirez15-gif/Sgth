@@ -1,0 +1,44 @@
+.pestana { padding-top: 20px; }
+
+.nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.lector {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+
+.nota-roles {
+  max-width: 70ch;
+  margin: 0 0 20px;
+  color: var(--sgth-tinta-suave);
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.rol {
+  padding: 18px 20px;
+  border: 1px solid var(--sgth-linea);
+  border-top: 4px solid var(--sgth-petroleo);
+  border-radius: 8px;
+  background: var(--sgth-superficie);
+
+  h2 { font-size: 1.05rem; }
+
+  dl { margin: 0; font-size: 0.875rem; }
+  dt { margin-top: 12px; font-weight: 650; color: var(--sgth-tinta); }
+  dd { margin: 2px 0 0; color: var(--sgth-tinta-suave); }
+}
+
+.rol__descripcion {
+  margin: 4px 0 8px;
+  font-size: 0.875rem;
+  color: var(--sgth-tinta-suave);
+}

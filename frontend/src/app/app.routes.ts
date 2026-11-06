@@ -1,14 +1,21 @@
+import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
 import { requierePermiso, requiereSesion, requiereSesionParaCambio, soloSinSesion } from './core/autenticacion';
 import { MENU_ADMINISTRACION, MENU_PRINCIPAL } from './core/menu';
 
-// Mientras se construyen, los módulos muestran una pantalla provisional.
-// En cada fase se reemplaza loadComponent por el componente real del módulo.
+// Pantallas ya construidas. Las demás opciones del menú muestran una pantalla provisional.
+const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
+  'administracion/usuarios': () => import('./features/administracion/usuarios/usuarios').then((c) => c.Usuarios),
+  'administracion/catalogos': () => import('./features/administracion/catalogos/catalogos').then((c) => c.Catalogos),
+  'administracion/configuracion': () => import('./features/administracion/configuracion/configuracion').then((c) => c.Configuracion),
+};
+
 const modulos: Routes = [...MENU_PRINCIPAL, ...MENU_ADMINISTRACION].map((m) => ({
   path: m.ruta,
+  title: `${m.titulo} · SGTH`,
   canActivate: [requierePermiso],
   data: { titulo: m.titulo, permisos: m.permisos, modulo: m },
-  loadComponent: () => import('./features/en-construccion/en-construccion').then((c) => c.EnConstruccion),
+  loadComponent: PANTALLAS[m.ruta] ?? (() => import('./features/en-construccion/en-construccion').then((c) => c.EnConstruccion)),
 }));
 
 export const routes: Routes = [

@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>{{ edicion ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" id="form-usuario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <mat-form-field>
+      <mat-label>Nombre completo</mat-label>
+      <input matInput formControlName="nombreCompleto" autocomplete="off" cdkFocusInitial>
+      <mat-hint>Aparece en la firma ENTREGA de las actas</mat-hint>
+      <mat-error>Escriba el nombre completo</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Usuario para ingresar</mat-label>
+      <input matInput formControlName="usuario" autocomplete="off" autocapitalize="none" spellcheck="false" (input)="marcarUsuarioTocado()">
+      @if (edicion) {
+        <mat-hint>El usuario no se puede cambiar</mat-hint>
+      } @else {
+        <mat-hint>Minúsculas sin tildes; puede usar números, punto o guion</mat-hint>
+      }
+      <mat-error>Entre 3 y 40 caracteres: minúsculas sin tildes, números, punto o guion</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Cargo</mat-label>
+      <input matInput formControlName="cargo" autocomplete="off">
+      <mat-error>Escriba el cargo</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Correo (opcional)</mat-label>
+      <input matInput type="email" formControlName="correo" autocomplete="off">
+      <mat-error>El correo no es válido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Rol</mat-label>
+      <mat-select formControlName="rol">
+        <mat-select-trigger>{{ nombreRol(form.controls.rol.value) }}</mat-select-trigger>
+        @for (r of datos.roles; track r.codigo) {
+          <mat-option [value]="r.codigo" [disabled]="datos.esUnoMismo && datos.usuario?.rol === 'ADMIN' && r.codigo !== 'ADMIN'">
+            {{ r.nombre }}
+            <span class="rol-descripcion">{{ r.descripcion }}</span>
+          </mat-option>
+        }
+      </mat-select>
+      @if (edicion) {
+        <mat-hint>Un cambio de rol aplica desde el siguiente inicio de sesión de la persona</mat-hint>
+      }
+    </mat-form-field>
+
+    @if (!edicion) {
+      <p class="nota">Al guardar, el sistema genera una clave temporal para entregarle a la persona.</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Cancelar</button>
+  <button mat-flat-button type="submit" form="form-usuario" [disabled]="guardando()">
+    {{ guardando() ? 'Guardando…' : edicion ? 'Guardar cambios' : 'Crear usuario' }}
+  </button>
+</mat-dialog-actions>

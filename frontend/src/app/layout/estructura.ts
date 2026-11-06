@@ -42,7 +42,7 @@ export class Estructura {
     inject(BreakpointObserver).observe('(max-width: 960px)').pipe(map((r) => r.matches)),
     { initialValue: false },
   );
-  protected readonly menuAbierto = signal(true);
+  protected readonly menuAbierto = signal(false); // en celular el menú empieza cerrado
 
   /** Título de la pantalla actual, tomado de data.titulo de la ruta. */
   protected readonly titulo = toSignal(

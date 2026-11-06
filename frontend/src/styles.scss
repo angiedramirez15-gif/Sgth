@@ -57,6 +57,8 @@ html {
     corner-medium: 8px,
     corner-full: 6px,
   ));
+
+  --mat-dialog-container-shape: 12px;
 }
 
 // --- Base ----------------------------------------------------------------
@@ -107,3 +109,98 @@ a { color: var(--sgth-petroleo); }
     transition-duration: 0.01ms !important;
   }
 }
+
+// --- Piezas compartidas de las pantallas de trabajo ----------------------
+.sgth-pagina { max-width: 1180px; }
+
+.sgth-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  p { margin: 4px 0 0; max-width: 70ch; color: var(--sgth-tinta-suave); }
+}
+
+.sgth-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-bottom: 4px;
+
+  .busqueda { flex: 1 1 280px; max-width: 420px; }
+  mat-form-field { --mat-form-field-container-height: 44px; --mat-form-field-container-vertical-padding: 10px; }
+}
+
+.sgth-marco {
+  overflow-x: auto;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+}
+
+.sgth-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+
+  th {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--sgth-linea);
+    background: #f7fafa;
+    color: var(--sgth-tinta-suave);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--sgth-linea);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: #f9fbfb; }
+  tr.inactivo td { color: #8a9a9d; }
+
+  .acciones { width: 1%; text-align: right; white-space: nowrap; }
+  .secundario { display: block; font-size: 0.8rem; color: var(--sgth-tinta-suave); }
+}
+
+.sgth-vacio {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--sgth-tinta-suave);
+}
+
+// Estados: punto de color + texto (no depende solo del color)
+.sgth-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+
+  &::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  &--activo { color: var(--sgth-verde-texto); }
+  &--inactivo { color: #7d8c8f; }
+  &--alerta { color: var(--sgth-ambar); }
+}
+
+.sgth-etiqueta {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--sgth-petroleo-suave);
+  color: var(--sgth-petroleo-profundo);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sgth-cargando { margin: -1px 0 0; }

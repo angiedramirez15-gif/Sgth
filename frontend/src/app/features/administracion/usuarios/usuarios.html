@@ -1,0 +1,142 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Usuarios</h1>
+      <p>Personas que pueden ingresar al SGTH y el rol que define lo que cada una puede hacer.</p>
+    </div>
+    <button mat-flat-button (click)="nuevo()" [disabled]="cargando() || errorCarga()">
+      <mat-icon>person_add</mat-icon>Nuevo usuario
+    </button>
+  </header>
+
+  <mat-tab-group animationDuration="0ms" mat-stretch-tabs="false" mat-align-tabs="start">
+    <mat-tab label="Usuarios">
+      <div class="pestana">
+        <div class="sgth-filtros">
+          <mat-form-field class="busqueda" subscriptSizing="dynamic">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>Buscar por nombre, usuario o cargo</mat-label>
+            <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Rol</mat-label>
+            <mat-select [ngModel]="rol()" (ngModelChange)="rol.set($event)">
+              <mat-option value="">Todos</mat-option>
+              @for (r of roles(); track r.codigo) {
+                <mat-option [value]="r.codigo">{{ r.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-slide-toggle [ngModel]="verInactivos()" (ngModelChange)="verInactivos.set($event)">
+            Mostrar inactivos ({{ totalInactivos() }})
+          </mat-slide-toggle>
+        </div>
+
+        <div class="sgth-marco">
+          @if (cargando()) {
+            <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando usuarios" />
+          }
+          <table class="sgth-tabla">
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Cargo</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Último ingreso</th>
+                <th scope="col" class="acciones"><span class="lector">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of filtrados(); track u.id) {
+                <tr [class.inactivo]="!u.activo">
+                  <td>
+                    <span class="nombre">{{ u.nombreCompleto }}
+                      @if (u.id === yo()?.id) { <span class="sgth-etiqueta">Usted</span> }
+                    </span>
+                    <span class="secundario">{{ u.usuario }}</span>
+                  </td>
+                  <td>{{ u.cargo }}</td>
+                  <td>{{ u.rolNombre }}</td>
+                  <td>
+                    @if (!u.activo) {
+                      <span class="sgth-estado sgth-estado--inactivo">Inactivo</span>
+                    } @else if (u.bloqueado) {
+                      <span class="sgth-estado sgth-estado--alerta">Bloqueado por intentos</span>
+                    } @else if (u.debeCambiarClave) {
+                      <span class="sgth-estado sgth-estado--alerta">Clave temporal</span>
+                    } @else {
+                      <span class="sgth-estado sgth-estado--activo">Activo</span>
+                    }
+                  </td>
+                  <td>
+                    @if (u.ultimoAcceso) {
+                      {{ u.ultimoAcceso.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}
+                    } @else {
+                      <span class="secundario">Nunca</span>
+                    }
+                  </td>
+                  <td class="acciones">
+                    <button mat-icon-button [matMenuTriggerFor]="menu" [attr.aria-label]="'Opciones de ' + u.nombreCompleto">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu" xPosition="before">
+                      <button mat-menu-item (click)="editar(u)"><mat-icon>edit</mat-icon>Editar</button>
+                      @if (u.id !== yo()?.id) {
+                        @if (u.activo) {
+                          <button mat-menu-item (click)="restablecer(u)"><mat-icon>lock_reset</mat-icon>Restablecer clave</button>
+                        }
+                        <button mat-menu-item (click)="cambiarEstado(u)">
+                          <mat-icon>{{ u.activo ? 'person_off' : 'person_check' }}</mat-icon>{{ u.activo ? 'Inactivar' : 'Activar' }}
+                        </button>
+                      }
+                    </mat-menu>
+                  </td>
+                </tr>
+              } @empty {
+                @if (!cargando()) {
+                  <tr>
+                    <td colspan="6" class="sgth-vacio">
+                      @if (errorCarga()) {
+                        No se pudo cargar la lista. <button mat-button (click)="cargar()">Intentar de nuevo</button>
+                      } @else if (texto() || rol()) {
+                        Ningún usuario coincide con la búsqueda.
+                      } @else {
+                        Aún no hay usuarios. Cree el primero con "Nuevo usuario".
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Roles y permisos">
+      <div class="pestana">
+        <p class="nota-roles">
+          Los roles son fijos y siguen la matriz de permisos de la documentación (sección 4.2).
+          Para cambiar lo que puede hacer una persona, cámbiele el rol.
+        </p>
+        <div class="roles">
+          @for (r of rolesAgrupados(); track r.codigo) {
+            <section class="rol" [attr.aria-labelledby]="'rol-' + r.codigo">
+              <h2 [id]="'rol-' + r.codigo">{{ r.nombre }}</h2>
+              <p class="rol__descripcion">{{ r.descripcion }}</p>
+              <dl>
+                @for (g of r.grupos; track g.modulo) {
+                  <dt>{{ g.modulo }}</dt>
+                  @for (a of g.acciones; track a) {
+                    <dd>{{ a }}</dd>
+                  }
+                }
+              </dl>
+            </section>
+          }
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

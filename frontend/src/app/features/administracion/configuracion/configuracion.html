@@ -1,0 +1,63 @@
+<div class="sgth-pagina configuracion">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Configuración</h1>
+      <p>Parámetros generales del sistema. Cada cambio queda registrado con la persona que lo hizo.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando configuración" />
+  }
+
+  @if (faltaSalario()) {
+    <p class="pendiente" role="status">
+      <mat-icon>warning</mat-icon>
+      <span>Falta registrar el <strong>salario mínimo vigente</strong>. Sin ese valor, el sistema no puede calcular quién tiene derecho a dotación.</span>
+    </p>
+  }
+
+  @for (g of grupos(); track g.nombre) {
+    <section class="grupo" [attr.aria-labelledby]="'g-' + $index">
+      <h2 [id]="'g-' + $index">{{ g.nombre }}</h2>
+
+      @for (p of g.parametros; track p.clave) {
+        <div class="parametro" [class.parametro--pendiente]="p.clave === 'smmlv_valor' && !p.valor">
+          <div class="parametro__texto">
+            <label [for]="'p-' + p.clave" class="parametro__etiqueta">{{ p.etiqueta }}</label>
+            @if (p.ayuda) { <p class="parametro__ayuda">{{ p.ayuda }}</p> }
+            @if (p.actualizadoPor && p.actualizadoEn) {
+              <p class="parametro__cambio">Último cambio: {{ p.actualizadoPor }}, {{ p.actualizadoEn.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}</p>
+            }
+          </div>
+
+          <div class="parametro__valor">
+            @if (p.editable) {
+              <mat-form-field subscriptSizing="dynamic" [class.ancho]="p.tipo === 'texto'">
+                @if (p.tipo === 'dinero') { <span matTextPrefix>$&nbsp;</span> }
+                <input matInput [id]="'p-' + p.clave" [type]="p.tipo === 'texto' ? 'text' : 'number'"
+                       [attr.min]="p.minimo ?? null" [attr.max]="p.maximo ?? null" [attr.maxlength]="p.tipo === 'texto' ? p.maximo : null"
+                       [ngModel]="borradores()[p.clave]" (ngModelChange)="editar(p.clave, $event === null ? '' : '' + $event)"
+                       (keydown.enter)="cambiado(p) && guardar(p)" (keydown.escape)="descartar(p)">
+              </mat-form-field>
+              @if (p.tipo !== 'texto') { <span class="parametro__sufijo">{{ p.sufijo ?? '' }}</span> }
+              @if (p.tipo === 'dinero' && p.valor) {
+                <span class="parametro__formato">{{ +p.valor | number: '1.0-0' }} pesos</span>
+              }
+              @if (cambiado(p)) {
+                <div class="parametro__acciones">
+                  <button mat-button type="button" (click)="descartar(p)">Descartar</button>
+                  <button mat-flat-button type="button" (click)="guardar(p)" [disabled]="guardando() === p.clave">
+                    {{ guardando() === p.clave ? 'Guardando…' : 'Guardar' }}
+                  </button>
+                </div>
+              }
+            } @else {
+              <span class="parametro__fijo" [id]="'p-' + p.clave"><mat-icon>lock</mat-icon>{{ p.valor }}</span>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>

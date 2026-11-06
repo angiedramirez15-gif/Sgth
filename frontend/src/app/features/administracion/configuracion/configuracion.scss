@@ -1,0 +1,100 @@
+.configuracion { max-width: 940px; }
+
+.pendiente {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--sgth-ambar);
+  border-radius: 6px;
+  background: var(--sgth-ambar-fondo);
+  color: #6b4100;
+
+  mat-icon { flex: none; color: var(--sgth-ambar); }
+}
+
+.grupo {
+  margin-bottom: 28px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+
+  h2 {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--sgth-linea);
+    font-size: 1rem;
+  }
+}
+
+.parametro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, auto);
+  gap: 12px 32px;
+  align-items: center;
+  padding: 16px 20px;
+
+  & + & { border-top: 1px solid var(--sgth-linea); }
+
+  &--pendiente { box-shadow: inset 4px 0 0 var(--sgth-ambar); }
+}
+
+.parametro__etiqueta { font-weight: 600; }
+
+.parametro__ayuda,
+.parametro__cambio {
+  margin: 2px 0 0;
+  max-width: 60ch;
+  font-size: 0.85rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.parametro__cambio { font-size: 0.78rem; }
+
+.parametro__valor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  mat-form-field { width: 160px; }
+  mat-form-field.ancho { width: 280px; }
+}
+
+.parametro__sufijo {
+  width: 15ch;
+  font-size: 0.9rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.parametro__formato {
+  width: 100%;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.parametro__acciones { display: flex; gap: 4px; }
+
+.parametro__fijo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sgth-tinta-suave);
+  font-size: 0.9rem;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+@media (max-width: 720px) {
+  .parametro { grid-template-columns: 1fr; }
+  .parametro__valor { justify-content: flex-start; }
+  .parametro__sufijo {
+  width: 15ch;
+  font-size: 0.9rem;
+  color: var(--sgth-tinta-suave);
+}
+
+.parametro__formato { text-align: left; }
+}

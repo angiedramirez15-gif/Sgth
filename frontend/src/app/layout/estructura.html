@@ -1,5 +1,5 @@
 <mat-sidenav-container class="contenedor">
-  <mat-sidenav class="menu" [mode]="movil() ? 'over' : 'side'" [opened]="movil() ? menuAbierto() && movil() : true"
+  <mat-sidenav class="menu" [mode]="movil() ? 'over' : 'side'" [opened]="!movil() || menuAbierto()"
                (closedStart)="menuAbierto.set(false)">
     <a class="menu__marca" routerLink="/" (click)="alNavegar()" aria-label="Inicio del SGTH">
       <img src="marca/logo-drim-duit-claro.png" alt="DRIM DUIT" width="132" height="56">

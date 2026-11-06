@@ -29,7 +29,11 @@
             <span class="modulo__titulo">{{ m.titulo }}</span>
             <span class="modulo__descripcion">{{ m.descripcion }}</span>
           </span>
-          <span class="modulo__estado">En construcción, fase {{ m.fase }}</span>
+          @if (m.disponible) {
+            <span class="modulo__estado modulo__estado--listo">Disponible</span>
+          } @else {
+            <span class="modulo__estado">En construcción, fase {{ m.fase }}</span>
+          }
         </a>
       </li>
     } @empty {

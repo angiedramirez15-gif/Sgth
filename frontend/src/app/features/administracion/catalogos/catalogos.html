@@ -1,0 +1,107 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Catálogos</h1>
+      <p>Listas que se usan en las fichas de los colaboradores y en el inventario.</p>
+    </div>
+  </header>
+
+  <div class="disposicion">
+    <!-- Selector de catálogo: lista en escritorio, desplegable en celular -->
+    <nav class="lista-catalogos" aria-label="Catálogos">
+      @for (d of definiciones(); track d.clave) {
+        <button type="button" class="lista-catalogos__opcion" [class.activa]="d.clave === actual()?.clave"
+                [attr.aria-current]="d.clave === actual()?.clave ? 'page' : null" (click)="seleccionar(d.clave)">
+          {{ d.titulo }}
+        </button>
+      }
+    </nav>
+    <mat-form-field class="selector-movil" subscriptSizing="dynamic">
+      <mat-label>Catálogo</mat-label>
+      <mat-select [value]="actual()?.clave" (selectionChange)="seleccionar($event.value)">
+        @for (d of definiciones(); track d.clave) {
+          <mat-option [value]="d.clave">{{ d.titulo }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (actual(); as d) {
+      <section class="contenido" [attr.aria-labelledby]="'titulo-' + d.clave">
+        <div class="contenido__encabezado">
+          <div>
+            <h2 [id]="'titulo-' + d.clave">{{ d.titulo }}</h2>
+            <p>{{ d.descripcion }}</p>
+          </div>
+          <button mat-flat-button (click)="agregar()"><mat-icon>add</mat-icon>Agregar</button>
+        </div>
+
+        <div class="sgth-filtros">
+          <mat-form-field class="busqueda" subscriptSizing="dynamic">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>Buscar en {{ d.titulo.toLowerCase() }}</mat-label>
+            <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+          </mat-form-field>
+          <mat-slide-toggle [ngModel]="verInactivos()" (ngModelChange)="verInactivos.set($event)">
+            Mostrar inactivos ({{ totalInactivos() }})
+          </mat-slide-toggle>
+        </div>
+
+        <div class="sgth-marco">
+          @if (cargando()) {
+            <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando" />
+          }
+          <table class="sgth-tabla">
+            <thead>
+              <tr>
+                @for (c of columnas(); track c.columna) {
+                  <th scope="col">{{ c.etiqueta }}</th>
+                }
+                <th scope="col">Estado</th>
+                <th scope="col" class="acciones"><span class="lector">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of filtrados(); track r.id) {
+                <tr [class.inactivo]="!r.activo">
+                  @for (c of columnas(); track c.columna; let primero = $first) {
+                    <td [class.principal]="primero">
+                      @if (valor(r, c); as v) { {{ v }} } @else { <span class="secundario">—</span> }
+                    </td>
+                  }
+                  <td>
+                    <span class="sgth-estado" [class.sgth-estado--activo]="r.activo" [class.sgth-estado--inactivo]="!r.activo">
+                      {{ r.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="acciones">
+                    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Opciones">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu" xPosition="before">
+                      <button mat-menu-item (click)="editar(r)"><mat-icon>edit</mat-icon>Editar</button>
+                      <button mat-menu-item (click)="cambiarEstado(r)">
+                        <mat-icon>{{ r.activo ? 'block' : 'check_circle' }}</mat-icon>{{ r.activo ? 'Inactivar' : 'Activar' }}
+                      </button>
+                    </mat-menu>
+                  </td>
+                </tr>
+              } @empty {
+                @if (!cargando()) {
+                  <tr>
+                    <td [attr.colspan]="columnas().length + 2" class="sgth-vacio">
+                      @if (texto()) {
+                        Ningún registro coincide con la búsqueda.
+                      } @else {
+                        Todavía no hay registros. Use "Agregar" para crear {{ d.singular }}.
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  </div>
+</div>
