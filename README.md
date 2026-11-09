@@ -34,7 +34,7 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`). Se pueden repetir sin error.
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql` y `005_opcion_no_aplica.sql`). Se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
 El salario mínimo se registra después desde el sistema, en Administración, Configuración.
@@ -105,6 +105,8 @@ Con el usuario `admin`, en el menú **Administración**:
 | PowerShell no deja ejecutar `npm` | Use `npm.cmd`, o ejecute una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
 | El backend no arranca: `JWT_SECRETO ... al menos 32 caracteres` | Complete `JWT_SECRETO` en `.env` (sección 3). |
 | En el login: "No hay conexión con el servidor del SGTH" | El backend no está corriendo: ejecute `npm run start:dev` en `backend/`. |
+| La importación dice que un cargo, área o entidad "no existe en los catálogos del sistema" | Créelo en Administración, Catálogos, o escriba en el Excel el nombre exacto de la lista desplegable. La página muestra arriba el resumen de todo lo que falta. Abreviaturas como "Sura" por "EPS Sura" se reconocen solas. |
+| La importación rechaza el número de documento, teléfono o cuenta | Si Excel lo convirtió en notación científica (1,67E+09), formatee esa columna como **Texto** y escríbalo de nuevo. |
 
 ## 7. Estructura
 

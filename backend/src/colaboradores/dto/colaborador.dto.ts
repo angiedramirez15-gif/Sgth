@@ -20,7 +20,7 @@ export class ColaboradorDto {
   @Type(() => Number) @IsInt({ message: 'Seleccione el tipo de documento' })
   tipoDocumentoId: number;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.replace(/[\s.]/g, '').toUpperCase() : value))
+  @Transform(({ value }) => (typeof value === 'number' ? String(value) : typeof value === 'string' ? value.replace(/[\s.]/g, '').toUpperCase() : value))
   @IsString({ message: 'Escriba el número de documento' })
   @Matches(/^[A-Z0-9-]{3,20}$/, { message: 'El número de documento debe tener entre 3 y 20 caracteres: números, letras o guion (sin puntos)' })
   numeroDocumento: string;

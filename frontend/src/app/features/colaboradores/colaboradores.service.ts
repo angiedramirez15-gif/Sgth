@@ -124,6 +124,7 @@ export interface ResultadoImportacion {
   errores: { fila: number; documento: string; nombre: string; errores: string[] }[];
   vistaPrevia: { fila: number; documento: string; nombre: string }[];
   creados: number;
+  faltantes?: { lista: string; valores: string[] }[];
 }
 
 @Injectable({ providedIn: 'root' })

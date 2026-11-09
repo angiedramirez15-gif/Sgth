@@ -182,10 +182,45 @@ describe('ImportacionService', () => {
     expect(insertados).toHaveLength(0);
     const porFila = Object.fromEntries(r.errores.map((e) => [e.fila, e.errores.join(' | ')]));
     expect(porFila[3]).toContain('repetido en la fila 2');
-    expect(porFila[4]).toContain('Cargo: "Gerente general" no está en la lista');
+    expect(porFila[4]).toContain('Cargo: "Gerente general" no existe en los catálogos del sistema');
     expect(porFila[4]).toContain('no es una fecha válida');
     expect(porFila[5]).toContain('término fijo necesita fecha de fin');
     expect(porFila[6]).toContain('Ya existe en el SGTH');
+  });
+
+  it('acepta documento, teléfono y salario escritos como número en Excel (caso real de la primera importación)', async () => {
+    const archivo = await archivoCon([fila({ 'Número de documento': 16737348, Teléfono: 3157894561, Salario: '1.750.905' })]);
+    const { s, insertados } = crearServicio();
+    const r = await s.importar(archivo, true, actor);
+    expect(r.errores).toEqual([]);
+    expect(insertados[0]).toMatchObject({ numeroDocumento: '16737348', telefono: '3157894561', salario: 1750905 });
+  });
+
+  it('encuentra "Sura" como "EPS Sura", sugiere nombres parecidos y resume lo que falta en los catálogos', async () => {
+    const archivo = await archivoCon([
+      fila({ 'Número de documento': 16737348, EPS: 'Nueva', Área: 'Obras civiles', Cargo: 'General General' }),
+      fila({ 'Número de documento': 31477806, Cargo: 'Asistente de General y Tesoreria', Área: 'Obra' }),
+    ]);
+    const { s } = crearServicio();
+    const r = await s.importar(archivo, false, actor);
+    const fila2 = r.errores.find((e) => e.fila === 2)!.errores;
+    expect(fila2.join(' ')).not.toContain('EPS'); // "Nueva" → "Nueva EPS"
+    expect(fila2).toContain('Cargo: "General General" no existe en los catálogos del sistema');
+    expect(fila2.some((m) => m.startsWith('Área: "Obras civiles"'))).toBe(true);
+    // Sin mensajes repetidos por el mismo campo
+    expect(fila2).not.toContain('Seleccione el cargo');
+    expect(fila2.join(' ')).not.toContain('número de documento');
+    expect(r.faltantes).toEqual([
+      { lista: 'Cargo', valores: ['Asistente de General y Tesoreria', 'General General'] },
+      { lista: 'Área', valores: ['Obras civiles'] },
+    ]);
+  });
+
+  it('sugiere el nombre correcto cuando está mal escrito', async () => {
+    const archivo = await archivoCon([fila({ Cargo: 'Auxiliar de obras' })]);
+    const { s } = crearServicio();
+    const r = await s.importar(archivo, false, actor);
+    expect(r.errores[0].errores[0]).toBe('Cargo: "Auxiliar de obras" no existe en los catálogos del sistema. ¿Quiso decir "Auxiliar de obra"?');
   });
 
   it('rechaza archivos que no son Excel', async () => {

@@ -275,7 +275,7 @@ export class ColaboradoresService {
       this.db.consultar('SELECT id, codigo, nombre FROM tipos_documento_identidad WHERE activo = 1 ORDER BY id'),
       this.db.consultar('SELECT id, nombre FROM areas WHERE activo = 1 ORDER BY nombre'),
       this.db.consultar('SELECT id, nombre, area_id AS areaId, nivel_riesgo_arl AS nivelRiesgoArl FROM cargos WHERE activo = 1 ORDER BY nombre'),
-      this.db.consultar('SELECT id, tipo, nombre FROM entidades_seguridad_social WHERE activo = 1 ORDER BY nombre'),
+      this.db.consultar("SELECT id, tipo, nombre FROM entidades_seguridad_social WHERE activo = 1 ORDER BY nombre = 'No aplica' DESC, nombre"),
       this.db.consultar(
         `SELECT c.id, CONCAT(c.nombres, ' ', c.apellidos) AS nombre, ca.nombre AS cargo
            FROM colaboradores c JOIN cargos ca ON ca.id = c.cargo_id

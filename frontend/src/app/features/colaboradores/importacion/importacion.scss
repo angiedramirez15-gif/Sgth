@@ -93,3 +93,28 @@
 @media (max-width: 600px) {
   .paso { padding-left: 22px; padding-top: 62px; }
 }
+
+.faltantes {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--sgth-linea);
+  border-left: 4px solid var(--sgth-petroleo);
+  border-radius: 8px;
+  background: var(--sgth-superficie);
+
+  h3 { margin: 0; font-size: 0.95rem; }
+  p { margin: 4px 0 10px; font-size: 0.9rem; color: var(--sgth-tinta-suave); max-width: 68ch; }
+  dl { margin: 0; display: grid; gap: 8px; }
+}
+
+.faltantes__grupo {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 8px;
+  align-items: baseline;
+
+  dt { font-weight: 600; font-size: 0.9rem; }
+  dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}

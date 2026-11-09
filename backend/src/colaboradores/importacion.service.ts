@@ -209,6 +209,23 @@ export class ImportacionService {
     const tiposDoc = (await this.colaboradores.opciones()).tiposDocumento as { id: number; codigo: string }[];
     for (const t of tiposDoc) buscar.get('tiposDocumento')!.set(clave(t.codigo), t.id);
 
+    // Para nombres que no coinciden exacto: "Sura" encuentra "EPS Sura" si es la única que lo contiene
+    const textos = new Map(Object.entries(listas).map(([k, items]) => [k, items.map((it) => ({ clave: clave(it.texto), texto: it.texto, valor: it.valor }))]));
+    const contienePalabras = (largo: string, corto: string) => corto.length >= 3 && ` ${largo} `.includes(` ${corto} `);
+    const resolver = (lista: Lista, v: unknown): { valor?: string | number; sugerencia?: string } => {
+      const k = clave(v);
+      const exacto = buscar.get(lista)!.get(k);
+      if (exacto !== undefined) return { valor: exacto };
+      const items = textos.get(lista) ?? [];
+      const parecidos = items.filter((it) => contienePalabras(it.clave, k) || contienePalabras(k, it.clave));
+      if (parecidos.length === 1) return { valor: parecidos[0].valor };
+      // Sugerencia: mismo comienzo de palabra ("Administrativo" → "Administración")
+      const raiz = k.slice(0, Math.max(6, Math.floor(k.length * 0.6)));
+      const sugerido = items.find((it) => raiz.length >= 6 && it.clave.startsWith(raiz.slice(0, 6)));
+      return { sugerencia: sugerido?.texto };
+    };
+    const faltantes = new Map<string, Set<string>>(); // "Cargo" → nombres que no existen en el catálogo
+
     const existentes = new Set(
       (await this.db.consultar<{ tipo_documento_id: number; numero_documento: string }>('SELECT tipo_documento_id, numero_documento FROM colaboradores'))
         .map((c) => `${c.tipo_documento_id}|${c.numero_documento}`),
@@ -229,28 +246,53 @@ export class ImportacionService {
       if (filas.length + errores.length >= MAX_FILAS) throw new BadRequestException(`El archivo supera el máximo de ${MAX_FILAS} colaboradores`);
 
       const problemas: string[] = [];
+      const camposConError = new Set<string>();
       const datos: Record<string, unknown> = { tallas: {} };
       for (const c of COLUMNAS) {
         let v = valor(c.campo);
         if (v === null) continue;
         if (c.lista) {
-          const encontrado = buscar.get(c.lista)!.get(clave(v));
-          if (encontrado === undefined) {
-            problemas.push(`${c.titulo}: "${v}" no está en la lista`);
+          const r = resolver(c.lista, v);
+          if (r.valor === undefined) {
+            camposConError.add(c.campo);
+            const esCatalogo = !(c.lista in LISTAS);
+            if (esCatalogo) {
+              if (!faltantes.has(c.titulo)) faltantes.set(c.titulo, new Set());
+              faltantes.get(c.titulo)!.add(String(v).trim());
+            }
+            problemas.push(
+              `${c.titulo}: "${v}" no existe ${esCatalogo ? 'en los catálogos del sistema' : 'en la lista'}` +
+              (r.sugerencia ? `. ¿Quiso decir "${r.sugerencia}"?` : ''),
+            );
             continue;
           }
-          v = encontrado;
+          v = r.valor;
         } else if (c.tipo === 'fecha') {
           const f = this.fecha(v);
-          if (!f) { problemas.push(`${c.titulo}: "${v}" no es una fecha válida (use día/mes/año)`); continue; }
+          if (!f) { camposConError.add(c.campo); problemas.push(`${c.titulo}: "${v}" no es una fecha válida (use día/mes/año)`); continue; }
           v = f;
+        } else if (c.tipo === 'numero') {
+          // Acepta "1.750.905", "$ 1.750.905" o el número de Excel
+          if (typeof v === 'string') v = v.replace(/[$\s.]/g, '').replace(',', '.');
+        } else if (typeof v === 'number') {
+          // Documento, teléfono, cuenta o talla escritos como número en Excel
+          if (!Number.isSafeInteger(v)) {
+            camposConError.add(c.campo);
+            problemas.push(`${c.titulo}: el número es muy largo y Excel lo cambió. Formatee la celda como texto y escríbalo de nuevo`);
+            continue;
+          }
+          v = String(v);
+        } else if (v instanceof Date) {
+          v = String(v);
         }
         if (c.campo.startsWith('talla:')) (datos.tallas as Record<string, unknown>)[c.campo.slice(6)] = String(v);
         else datos[c.campo] = v;
       }
 
       const dto = plainToInstance(ColaboradorDto, datos);
-      for (const e of await validate(dto, { whitelist: true })) problemas.push(...Object.values(e.constraints ?? {}));
+      for (const e of await validate(dto, { whitelist: true })) {
+        if (!camposConError.has(e.property)) problemas.push(...Object.values(e.constraints ?? {}));
+      }
       if (!problemas.length) {
         try {
           await this.colaboradores.validar(dto, this.db);
@@ -278,6 +320,7 @@ export class ImportacionService {
       validas: filas.length,
       errores,
       vistaPrevia: filas.slice(0, 10).map((f) => ({ fila: f.fila, documento: f.documento, nombre: f.nombre })),
+      faltantes: [...faltantes.entries()].map(([lista, valores]) => ({ lista, valores: [...valores].sort() })),
       creados: 0,
     };
     if (!resumen.total) throw new BadRequestException('El archivo no tiene colaboradores. Llene la hoja "Colaboradores" desde la fila 2');

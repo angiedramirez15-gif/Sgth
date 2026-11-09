@@ -66,6 +66,23 @@
               No se guardó nada. Corrija estas filas en el Excel y súbalo de nuevo.
             </div>
           </div>
+          @if (r.faltantes?.length) {
+            <section class="faltantes" aria-labelledby="titulo-faltantes">
+              <h3 id="titulo-faltantes">Nombres que no existen en los catálogos</h3>
+              <p>
+                Créelos en <a routerLink="/administracion/catalogos">Administración › Catálogos</a>
+                o escríbalos en el Excel igual a como aparecen en la lista desplegable de la plantilla.
+              </p>
+              <dl>
+                @for (f of r.faltantes; track f.lista) {
+                  <div class="faltantes__grupo">
+                    <dt>{{ f.lista }}</dt>
+                    <dd>@for (v of f.valores; track v) { <span class="sgth-etiqueta">{{ v }}</span> }</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
           <div class="sgth-marco">
             <table class="sgth-tabla">
               <thead>
