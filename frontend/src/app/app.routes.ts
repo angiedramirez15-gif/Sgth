@@ -11,6 +11,7 @@ const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
   dotacion: () => import('./features/inventario/dotacion/dotacion').then((c) => c.Dotacion),
   actas: () => import('./features/actas/listado/listado-actas').then((c) => c.ListadoActas),
   equipos: () => import('./features/inventario/equipos/equipos').then((c) => c.Equipos),
+  'administracion/plantillas': () => import('./features/administracion/plantillas/plantillas').then((c) => c.Plantillas),
   'administracion/configuracion': () => import('./features/administracion/configuracion/configuracion').then((c) => c.Configuracion),
 };
 

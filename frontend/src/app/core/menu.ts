@@ -22,6 +22,6 @@ export const MENU_PRINCIPAL: OpcionMenu[] = [
 export const MENU_ADMINISTRACION: OpcionMenu[] = [
   { ruta: 'administracion/usuarios', titulo: 'Usuarios', icono: 'manage_accounts', descripcion: 'Usuarios del sistema y sus roles.', permisos: ['usuarios.gestionar'], fase: 2, disponible: true },
   { ruta: 'administracion/catalogos', titulo: 'Catálogos', icono: 'list_alt', descripcion: 'Áreas, cargos, tipos de documento, entidades y proveedores.', permisos: ['catalogos.gestionar'], fase: 2, disponible: true },
-  { ruta: 'administracion/plantillas', titulo: 'Plantillas de actas', icono: 'edit_document', descripcion: 'Textos y cláusulas de cada tipo de acta.', permisos: ['plantillas.gestionar'], fase: 4 },
+  { ruta: 'administracion/plantillas', titulo: 'Plantillas de actas', icono: 'edit_document', descripcion: 'Textos y cláusulas de cada tipo de acta.', permisos: ['plantillas.gestionar'], fase: 4, disponible: true },
   { ruta: 'administracion/configuracion', titulo: 'Configuración', icono: 'tune', descripcion: 'Salario mínimo, días de alerta y otros parámetros.', permisos: ['configuracion.gestionar'], fase: 2, disponible: true },
 ];

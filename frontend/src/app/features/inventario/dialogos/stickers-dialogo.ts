@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { mensajeDeError } from '../../../core/autenticacion';
+import { mensajeDeErrorBlob } from '../../administracion/plantillas/plantillas';
 import { abrirPdf, type Activo, InventarioService } from '../inventario.service';
 
 const POR_HOJA = 30;
@@ -86,7 +86,7 @@ export class StickersDialogo {
       await abrirPdf(() => this.api.stickers(this.activos.map((a) => a.id), this.posicion(), this.bordes), 'Stickers_placas_SGTH.pdf');
       this.ref.close(true);
     } catch (e) {
-      this.error.set(mensajeDeError(e, 'No se pudo generar el PDF'));
+      this.error.set(await mensajeDeErrorBlob(e));
     } finally {
       this.abriendo.set(false);
     }

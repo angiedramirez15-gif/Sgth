@@ -168,3 +168,20 @@ export function fechaLarga(iso: string): string {
   const [a, m, d] = iso.slice(0, 10).split('-').map(Number);
   return `${d} de ${meses[m - 1]} de ${a}`;
 }
+
+/** Campos que se pueden usar en las plantillas, con su explicación para la pantalla de edición. */
+export const CAMPOS_PLANTILLA: { campo: string; descripcion: string; ejemplo: string; solo?: Plantilla[] }[] = [
+  { campo: 'NOMBRE', descripcion: 'Nombre completo del colaborador', ejemplo: 'Ana María Gómez Restrepo' },
+  { campo: 'CARGO', descripcion: 'Cargo del colaborador', ejemplo: 'Asistente de Talento Humano' },
+  { campo: 'TIPO_DOC', descripcion: 'Tipo de documento', ejemplo: 'C.C.' },
+  { campo: 'NUMERO_DOC', descripcion: 'Número de documento', ejemplo: '1113654321' },
+  { campo: 'EL_SENOR', descripcion: '"el señor" o "la señora"', ejemplo: 'la señora' },
+  { campo: 'EL_TRABAJADOR', descripcion: '"el trabajador" o "la trabajadora"', ejemplo: 'la trabajadora' },
+  { campo: 'EL_TRABAJADOR_MAY', descripcion: 'Lo mismo, en mayúsculas', ejemplo: 'LA TRABAJADORA' },
+  { campo: 'ESTE', descripcion: '"este" o "esta"', ejemplo: 'esta' },
+  { campo: 'EMPRESA', descripcion: 'Nombre de la empresa', ejemplo: 'DRIM DUIT S.A.S.' },
+  { campo: 'MOTIVO', descripcion: 'Motivo de la entrega o devolución', ejemplo: 'ingreso a la empresa' },
+  { campo: 'PERIODO', descripcion: 'Período de dotación', ejemplo: '3 de 2026', solo: ['DOTACION'] },
+  { campo: 'UBICACION', descripcion: 'Ubicación del puesto', ejemplo: 'la oficina administrativa', solo: ['MUEBLES'] },
+  { campo: 'TRASPASO', descripcion: 'Frase "Los elementos se encontraban asignados a…" (solo en traspasos)', ejemplo: '', solo: ['EQUIPOS', 'MUEBLES'] },
+];

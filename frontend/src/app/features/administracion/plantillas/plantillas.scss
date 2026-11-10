@@ -1,0 +1,139 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+// --- Tipos ---
+.tipos { display: grid; gap: 6px; position: sticky; top: 16px; }
+
+.tipo {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sgth-tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: var(--sgth-superficie); border-color: var(--sgth-linea); }
+  &:focus-visible { outline: 2px solid var(--sgth-petroleo); outline-offset: 1px; }
+  &--activo { background: var(--sgth-superficie); border-color: var(--sgth-petroleo); box-shadow: inset 3px 0 0 var(--sgth-petroleo); }
+}
+
+.tipo__nombre { font-weight: 600; }
+.tipo__dato { font-size: 0.78rem; color: var(--sgth-tinta-suave); }
+
+// --- Editor ---
+.editor__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+
+  h2 { margin: 0; font-size: 1.15rem; }
+}
+
+.secundario { font-size: 0.82rem; color: var(--sgth-tinta-suave); }
+
+// El editor se presenta como una hoja, en el mismo orden que el acta impresa
+.hoja {
+  padding: 28px 32px 20px;
+  background: #fff;
+  border: 1px solid var(--sgth-linea);
+  border-top: 3px solid var(--sgth-petroleo);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgb(9 66 77 / 8%);
+}
+
+.ancho { width: 100%; }
+.titulo textarea { font-weight: 700; text-align: center; }
+.manifiesta input { font-weight: 700; text-align: center; }
+
+.tabla-falsa {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  margin: 2px 0 18px;
+  border: 1px dashed #b8c4c7;
+  border-radius: 4px;
+  background: repeating-linear-gradient(0deg, #f6f9f9 0 13px, #fff 13px 14px);
+  color: var(--sgth-tinta-suave);
+  font-size: 0.85rem;
+}
+
+.clausulas { display: grid; gap: 12px; margin: 4px 0 8px; padding: 0; list-style: none; }
+
+.clausula { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; align-items: start; }
+
+.clausula__acciones { display: flex; flex-direction: column; }
+.clausula__acciones button { --mdc-icon-button-state-layer-size: 34px; width: 34px; height: 34px; padding: 5px; }
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+// --- Lateral ---
+.lateral { display: grid; gap: 14px; position: sticky; top: 16px; }
+
+.bloque {
+  padding: 16px 18px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+
+  h2 { margin: 0 0 6px; font-size: 1rem; }
+  > .secundario { margin: 0 0 12px; }
+}
+
+.campos { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+.campos li { display: grid; gap: 2px; }
+
+.campo {
+  justify-self: start;
+  padding: 2px 8px;
+  border: 1px solid var(--sgth-petroleo);
+  border-radius: 4px;
+  background: var(--sgth-petroleo-suave);
+  color: var(--sgth-petroleo-profundo);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: var(--sgth-petroleo); color: #fff; }
+  &:focus-visible { outline: 2px solid var(--sgth-verde); outline-offset: 1px; }
+  &:disabled { cursor: default; opacity: 0.7; }
+}
+
+.campo__texto { font-size: 0.8rem; color: var(--sgth-tinta-suave); }
+
+.versiones { display: grid; gap: 10px; margin: 6px 0 0; padding: 0; list-style: none; }
+
+.versiones li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 2px 8px; align-items: baseline; }
+.versiones li button { grid-column: 2; justify-self: start; margin-left: -12px; }
+.versiones__numero { font-weight: 700; color: var(--sgth-petroleo); }
+.versiones__texto .secundario { display: block; }
+
+@media (max-width: 1180px) {
+  .rejilla { grid-template-columns: 180px minmax(0, 1fr); }
+  .lateral { grid-column: 1 / -1; position: static; grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 760px) {
+  .rejilla { grid-template-columns: 1fr; }
+  .tipos { position: static; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .lateral { grid-template-columns: 1fr; }
+  .hoja { padding: 18px 16px; }
+}

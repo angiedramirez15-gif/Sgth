@@ -1,0 +1,120 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Plantillas de actas</h1>
+      <p>Los textos de cada tipo de acta. Al guardar se crea una versión nueva; las actas que ya se generaron no cambian.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando plantillas" />
+  } @else {
+    <div class="rejilla">
+      <!-- Tipos de acta -->
+      <nav class="tipos" aria-label="Tipo de acta">
+        @for (r of resumen(); track r.plantilla) {
+          <button type="button" class="tipo" [class.tipo--activo]="actual()?.plantilla === r.plantilla" [attr.aria-current]="actual()?.plantilla === r.plantilla ? 'page' : null" (click)="elegir(r.plantilla)">
+            <span class="tipo__nombre">{{ r.nombre }}</span>
+            <span class="tipo__dato">Versión {{ r.version }}{{ r.actas ? ', ' + r.actas + ' acta' + (r.actas === 1 ? '' : 's') : '' }}</span>
+          </button>
+        }
+      </nav>
+
+      @if (actual() && textos(); as t) {
+        <!-- Editor -->
+        <section class="editor" aria-labelledby="t-editor">
+          <div class="editor__cabeza">
+            <h2 id="t-editor">{{ actual()!.nombre }}</h2>
+            <span class="secundario">Versión {{ actual()!.version }}, {{ actual()!.creadoEn.replace(' ', 'T') | date: 'd MMM y' }}{{ actual()!.creadoPor ? ', ' + actual()!.creadoPor : '' }}</span>
+          </div>
+
+          <!-- El orden imita el acta en papel -->
+          <div class="hoja">
+            <mat-form-field class="ancho titulo">
+              <mat-label>Título</mat-label>
+              <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="3" [ngModel]="t.titulo" (ngModelChange)="cambiar({ titulo: $event })" (focus)="enfocar('titulo', $event)" maxlength="150" [readonly]="!puedeEditar"></textarea>
+            </mat-form-field>
+
+            <mat-form-field class="ancho">
+              <mat-label>Introducción (antes de la tabla de elementos)</mat-label>
+              <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="3" cdkAutosizeMaxRows="16" [ngModel]="t.textoIntroduccion" (ngModelChange)="cambiar({ textoIntroduccion: $event })" (focus)="enfocar('intro', $event)" [readonly]="!puedeEditar"></textarea>
+            </mat-form-field>
+
+            <div class="tabla-falsa" aria-hidden="true">Aquí va la tabla de elementos</div>
+
+            <mat-form-field class="ancho manifiesta">
+              <mat-label>Frase antes de las cláusulas</mat-label>
+              <input matInput [ngModel]="t.textoManifiesta" (ngModelChange)="cambiar({ textoManifiesta: $event })" (focus)="enfocar('manifiesta', $event)" maxlength="150" [readonly]="!puedeEditar">
+            </mat-form-field>
+
+            <ol class="clausulas">
+              @for (c of t.clausulas; track $index; let i = $index; let ultimo = $last) {
+                <li class="clausula">
+                  <mat-form-field class="ancho" subscriptSizing="dynamic">
+                    <mat-label>Cláusula {{ i + 1 }}</mat-label>
+                    <textarea matInput [id]="'clausula-' + i" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="16" [ngModel]="c" (ngModelChange)="cambiarClausula(i, $event)" (focus)="enfocar('' + i, $event)" [readonly]="!puedeEditar"></textarea>
+                  </mat-form-field>
+                  @if (puedeEditar) {
+                    <div class="clausula__acciones">
+                      <button mat-icon-button type="button" (click)="mover(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Subir cláusula ' + (i + 1)" matTooltip="Subir"><mat-icon>arrow_upward</mat-icon></button>
+                      <button mat-icon-button type="button" (click)="mover(i, 1)" [disabled]="ultimo" [attr.aria-label]="'Bajar cláusula ' + (i + 1)" matTooltip="Bajar"><mat-icon>arrow_downward</mat-icon></button>
+                      <button mat-icon-button type="button" (click)="quitarClausula(i)" [attr.aria-label]="'Quitar cláusula ' + (i + 1)" matTooltip="Quitar"><mat-icon>delete</mat-icon></button>
+                    </div>
+                  }
+                </li>
+              }
+            </ol>
+            @if (puedeEditar) {
+              <button mat-button type="button" (click)="agregarClausula()"><mat-icon>add</mat-icon>Agregar cláusula</button>
+            }
+          </div>
+
+          @if (error()) { <p class="sgth-error-caja" role="alert">{{ error() }}</p> }
+          <div class="pie">
+            <button mat-stroked-button type="button" (click)="vistaPrevia()" [disabled]="generando()"><mat-icon>visibility</mat-icon>{{ generando() ? 'Generando…' : 'Ver PDF de prueba' }}</button>
+            @if (puedeEditar) {
+              @if (cambios()) { <button mat-button type="button" (click)="descartar()">Descartar cambios</button> }
+              <button mat-flat-button type="button" (click)="guardar()" [disabled]="!cambios() || guardando()">
+                <mat-icon>save</mat-icon>{{ guardando() ? 'Guardando…' : 'Guardar como versión ' + siguienteVersion() }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- Campos e historial -->
+        <aside class="lateral">
+          <section class="bloque" aria-labelledby="t-campos">
+            <h2 id="t-campos">Campos</h2>
+            <p class="secundario">El sistema los reemplaza con los datos de cada acta. Haga clic en el texto y luego en el campo para ponerlo.</p>
+            <ul class="campos">
+              @for (c of actual()!.campos; track c.campo) {
+                <li>
+                  <button type="button" class="campo" (mousedown)="$event.preventDefault()" (click)="insertar(c.campo)" [disabled]="!puedeEditar" [matTooltip]="c.ejemplo ? 'Ej.: ' + c.ejemplo : ''">{{ '{{' + c.campo + '}}' }}</button>
+                  <span class="campo__texto">{{ c.descripcion }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+
+          <section class="bloque" aria-labelledby="t-versiones">
+            <h2 id="t-versiones">Versiones</h2>
+            <ul class="versiones">
+              @for (v of versiones(); track v.id) {
+                <li>
+                  <span class="versiones__numero">v{{ v.version }}</span>
+                  <span class="versiones__texto">
+                    {{ v.creadoEn.replace(' ', 'T') | date: 'd MMM y' }}{{ v.vigente ? ', vigente' : '' }}
+                    <span class="secundario">{{ v.creadoPor ?? 'Sistema' }}{{ v.actas ? ', ' + v.actas + ' acta' + (v.actas === 1 ? '' : 's') : '' }}</span>
+                  </span>
+                  @if (!v.vigente && puedeEditar) {
+                    <button mat-button type="button" (click)="restaurar(v)">Usar estos textos</button>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        </aside>
+      }
+    </div>
+  }
+</div>
