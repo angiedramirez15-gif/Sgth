@@ -158,8 +158,8 @@ export class StickersDto {
   @IsInt({ each: true, message: 'Lista de activos no válida' })
   ids: number[];
 
-  /** Posición de la primera etiqueta en la hoja (1 a 10), para reutilizar hojas ya empezadas. */
-  @Transform(numero) @IsOptional() @opcional @IsInt() @Min(1, { message: 'La posición va de 1 a 10' }) @Max(10, { message: 'La posición va de 1 a 10' })
+  /** Posición de la primera etiqueta en la hoja (1 a 30), para reutilizar hojas ya empezadas. */
+  @Transform(numero) @IsOptional() @opcional @IsInt() @Min(1, { message: 'La posición va de 1 a 30' }) @Max(30, { message: 'La posición va de 1 a 30' })
   posicionInicial?: number | null;
 
   /** Dibuja el borde de cada etiqueta, para imprimir en papel normal y recortar. */
