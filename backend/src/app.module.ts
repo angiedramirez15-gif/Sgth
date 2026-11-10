@@ -6,6 +6,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogosModule } from './catalogos/catalogos.module.js';
 import { ColaboradoresModule } from './colaboradores/colaboradores.module.js';
+import { ActasModule } from './actas/actas.module.js';
 import { InventarioModule } from './inventario/inventario.module.js';
 import { ConfiguracionController } from './configuracion/configuracion.controller.js';
 import { UsuariosModule } from './usuarios/usuarios.module.js';
@@ -32,6 +33,7 @@ if (!servirFrontend.length) {
     CatalogosModule,
     ColaboradoresModule,
     InventarioModule,
+    ActasModule,
     ...servirFrontend,
   ],
   controllers: [SaludController, ConfiguracionController],

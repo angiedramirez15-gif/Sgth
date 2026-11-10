@@ -15,6 +15,7 @@ export interface Parametro {
 export const PARAMETROS: Parametro[] = [
   { clave: 'empresa_nombre', etiqueta: 'Nombre de la empresa', grupo: 'Empresa y actas', tipo: 'texto', maximo: 150, editable: true, ayuda: 'Aparece en el texto de las actas' },
   { clave: 'ciudad_actas', etiqueta: 'Ciudad de las actas', grupo: 'Empresa y actas', tipo: 'texto', maximo: 80, editable: true },
+  { clave: 'pie_actas', etiqueta: 'Pie de página de las actas', grupo: 'Empresa y actas', tipo: 'texto', maximo: 400, editable: true, ayuda: 'Dirección, teléfono y correo. Separe los renglones con |' },
   { clave: 'url_sistema', etiqueta: 'Dirección del sistema en la red', grupo: 'Empresa y actas', tipo: 'texto', maximo: 200, formato: 'url', editable: true, ayuda: 'La que escriben los demás equipos para abrir el SGTH, por ejemplo http://192.168.1.20:3000. Va en el QR de los stickers' },
   { clave: 'prefijo_placa', etiqueta: 'Prefijo de las placas de inventario', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que las placas ya pegadas no se repitan: DD-EQ-0001, DD-MU-0001' },
   { clave: 'prefijo_acta', etiqueta: 'Prefijo del consecutivo de actas', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que los números de acta no se repitan' },

@@ -81,13 +81,15 @@
         </mat-tab>
       }
 
-      <mat-tab label="Entregas">
-        <div class="pestana proximo">
-          <mat-icon>inventory_2</mat-icon>
-          <p>Aquí aparecerán la dotación, los EPP, los equipos y los muebles entregados a {{ f.nombres }}, con sus actas.
-             Se habilita en las fases 4 y 5.</p>
-        </div>
-      </mat-tab>
+      @if (puedeVerEntregas) {
+        <mat-tab [label]="totalACargo() ? 'Entregas (' + totalACargo() + ' a cargo)' : 'Entregas'">
+          <ng-template matTabContent>
+            <div class="pestana">
+              <app-entregas-colaborador [colaboradorId]="f.id" [retirado]="f.estado === 'RETIRADO'" (total)="totalACargo.set($event)" />
+            </div>
+          </ng-template>
+        </mat-tab>
+      }
     </mat-tab-group>
   }
 </div>

@@ -1,0 +1,41 @@
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pendientes {
+  margin-left: 6px;
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sgth-ambar-fondo);
+  color: #6b4100;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.fila { cursor: pointer; }
+
+.numero {
+  color: var(--sgth-petroleo);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { text-decoration: underline; }
+}
+
+.resumen { max-width: 320px; }
+
+.resumen__texto {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.vacio-acciones { display: flex; justify-content: center; margin-top: 14px; }
+
+mat-button-toggle-group { --mat-standard-button-toggle-height: 40px; }

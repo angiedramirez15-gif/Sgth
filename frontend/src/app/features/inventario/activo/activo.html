@@ -21,9 +21,12 @@
         </p>
       </div>
       <div class="cabecera__acciones">
+        @if (puedeEntregar && a.estado === 'DISPONIBLE') {
+          <a mat-flat-button routerLink="/actas/entrega" [queryParams]="{ tipo: a.categoria === 'EQUIPO' ? 'EQUIPOS' : 'MUEBLES', activo: a.id }"><mat-icon>assignment_ind</mat-icon>Entregar</a>
+        }
         <button mat-stroked-button (click)="imprimir()"><mat-icon>qr_code_2</mat-icon>Sticker</button>
         @if (puedeGestionar) {
-          <button mat-flat-button (click)="editar()"><mat-icon>edit</mat-icon>Editar</button>
+          <button mat-stroked-button (click)="editar()"><mat-icon>edit</mat-icon>Editar</button>
           @if (a.estado !== 'ASIGNADO') {
             <button mat-icon-button [matMenuTriggerFor]="mas" aria-label="Más opciones"><mat-icon>more_vert</mat-icon></button>
             <mat-menu #mas="matMenu" xPosition="before">
@@ -38,6 +41,12 @@
       <mat-icon>{{ a.colaboradorId ? 'person' : a.estado === 'EN_REPARACION' ? 'build' : a.estado === 'DADO_DE_BAJA' ? 'delete' : 'inventory_2' }}</mat-icon>
       @if (a.colaboradorId) {
         <p>Lo tiene <a [routerLink]="['/colaboradores', a.colaboradorId]">{{ a.colaborador }}</a>, {{ a.colaboradorCargo }}.</p>
+        @if (puedeEntregar) {
+          <span class="tenencia__acciones">
+            <a mat-button routerLink="/actas/entrega" [queryParams]="{ tipo: a.categoria === 'EQUIPO' ? 'EQUIPOS' : 'MUEBLES', anterior: a.colaboradorId }">Traspasar</a>
+            <a mat-button routerLink="/actas/devolucion" [queryParams]="{ colaborador: a.colaboradorId }">Recibir devolución</a>
+          </span>
+        }
       } @else if (a.estado === 'EN_REPARACION') {
         <p>Está en reparación. Cuando vuelva, cámbielo a disponible para poder entregarlo.</p>
       } @else if (a.estado === 'DADO_DE_BAJA') {

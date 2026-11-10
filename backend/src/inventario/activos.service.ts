@@ -112,7 +112,7 @@ export class ActivosService {
       DEVOLUCION: 'Devolución',
       BAJA: 'Dado de baja',
       AJUSTE_POSITIVO: 'Reactivado',
-      ANULACION: 'Anulación de acta',
+      ANULACION: 'Acta anulada',
     };
     // orden: dentro del mismo segundo, el registro (movimiento) va antes que los cambios de estado
     const items: (HistorialActivo & { prioridad: number })[] = movimientos.map((m) => ({
@@ -148,40 +148,44 @@ export class ActivosService {
   /** Registra una o varias unidades; el sistema asigna la placa (DD-EQ-0001, DD-MU-0001). */
   async crear(dto: ActivoDto, u: UsuarioToken, ip?: string): Promise<Activo[]> {
     exigirPermiso(u, 'EQUIPO', 'gestionar');
-    const cantidad = dto.cantidad ?? 1;
-    if (cantidad > 1 && dto.serial) {
+    if ((dto.cantidad ?? 1) > 1 && dto.serial) {
       throw new BadRequestException('Con serial se registra una unidad a la vez. Para varias unidades iguales deje el serial vacío');
     }
-    return this.db.transaccion(async (cx) => {
-      const elemento = await this.elementoActivo(dto.elementoId, cx);
-      await this.validarProveedor(dto.proveedorId, cx);
-      const placas = await this.siguientesPlacas(elemento.categoria_inventario, cantidad, cx);
-      const creados: Activo[] = [];
-      for (const placa of placas) {
-        let id = 0;
-        try {
-          const r = await cx.ejecutar(
-            `INSERT INTO activos (elemento_id, serial, placa_inventario, marca, modelo, descripcion_adicional, estado, condicion,
-                                  fecha_compra, proveedor_id, valor_compra, observaciones, creado_por)
-             VALUES (?, ?, ?, ?, ?, ?, 'DISPONIBLE', ?, ?, ?, ?, ?, ?)`,
-            [elemento.id, dto.serial ?? null, placa, dto.marca ?? null, dto.modelo ?? null, dto.descripcionAdicional ?? null,
-              dto.condicion, dto.fechaCompra ?? null, dto.proveedorId ?? null, dto.valorCompra ?? null, dto.observaciones ?? null, u.sub],
-          );
-          id = r.insertId;
-        } catch (error) {
-          return this.serialDuplicado(error, dto.serial, cx);
-        }
-        await cx.ejecutar(
-          `INSERT INTO movimientos_inventario (elemento_id, activo_id, tipo_movimiento, cantidad, proveedor_id, usuario_id, observacion)
-           VALUES (?, ?, 'ENTRADA', 1, ?, ?, ?)`,
-          [elemento.id, id, dto.proveedorId ?? null, u.sub, `Placa ${placa}`],
+    return this.db.transaccion((cx) => this.crearEn(cx, dto, u, ip));
+  }
+
+  /** Igual que crear, dentro de una transacción ya abierta (la usan las actas antiguas). */
+  async crearEn(cx: Conexion, dto: ActivoDto, u: UsuarioToken, ip?: string, nota = ''): Promise<Activo[]> {
+    exigirPermiso(u, 'EQUIPO', 'gestionar');
+    const cantidad = dto.cantidad ?? 1;
+    const elemento = await this.elementoActivo(dto.elementoId, cx);
+    await this.validarProveedor(dto.proveedorId, cx);
+    const placas = await this.siguientesPlacas(elemento.categoria_inventario, cantidad, cx);
+    const creados: Activo[] = [];
+    for (const placa of placas) {
+      let id = 0;
+      try {
+        const r = await cx.ejecutar(
+          `INSERT INTO activos (elemento_id, serial, placa_inventario, marca, modelo, descripcion_adicional, estado, condicion,
+                                fecha_compra, proveedor_id, valor_compra, observaciones, creado_por)
+           VALUES (?, ?, ?, ?, ?, ?, 'DISPONIBLE', ?, ?, ?, ?, ?, ?)`,
+          [elemento.id, dto.serial ?? null, placa, dto.marca ?? null, dto.modelo ?? null, dto.descripcionAdicional ?? null,
+            dto.condicion, dto.fechaCompra ?? null, dto.proveedorId ?? null, dto.valorCompra ?? null, dto.observaciones ?? null, u.sub],
         );
-        const activo = await this.obtener(id, null, cx);
-        await this.auditoria.registrar({ usuarioId: u.sub, accion: 'CREAR', tabla: 'activos', registroId: id, despues: activo, ip }, cx);
-        creados.push(activo);
+        id = r.insertId;
+      } catch (error) {
+        return this.serialDuplicado(error, dto.serial, cx);
       }
-      return creados;
-    });
+      await cx.ejecutar(
+        `INSERT INTO movimientos_inventario (elemento_id, activo_id, tipo_movimiento, cantidad, proveedor_id, usuario_id, observacion)
+         VALUES (?, ?, 'ENTRADA', 1, ?, ?, ?)`,
+        [elemento.id, id, dto.proveedorId ?? null, u.sub, `Placa ${placa}${nota}`],
+      );
+      const activo = await this.obtener(id, null, cx);
+      await this.auditoria.registrar({ usuarioId: u.sub, accion: 'CREAR', tabla: 'activos', registroId: id, despues: activo, ip }, cx);
+      creados.push(activo);
+    }
+    return creados;
   }
 
   async editar(id: number, dto: ActivoDto, u: UsuarioToken, ip?: string): Promise<Activo> {

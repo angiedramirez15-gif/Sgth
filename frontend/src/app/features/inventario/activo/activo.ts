@@ -27,7 +27,9 @@ export class ActivoFicha implements OnInit {
   private readonly api = inject(InventarioService);
   private readonly avisos = inject(AvisosService);
   private readonly dialogo = inject(MatDialog);
-  protected readonly puedeGestionar = inject(SesionService).puede('inventario_activos.gestionar');
+  private readonly sesion = inject(SesionService);
+  protected readonly puedeGestionar = this.sesion.puede('inventario_activos.gestionar');
+  protected readonly puedeEntregar = this.sesion.puede('actas_activos.gestionar');
   protected readonly estados = ESTADOS_ACTIVO;
 
   protected readonly activo = signal<Activo | null>(null);

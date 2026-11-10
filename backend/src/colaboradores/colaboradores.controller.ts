@@ -5,6 +5,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { IsArray, IsInt } from 'class-validator';
 import type { Response } from 'express';
 import { ArchivosService } from '../archivos/archivos.service.js';
+import { disposicion } from '../common/descargas.js';
 import { Permisos, UsuarioActual } from '../common/decorators/decoradores.js';
 import { IdPipe } from '../common/id.pipe.js';
 import type { UsuarioToken } from '../common/tipos.js';
@@ -24,11 +25,6 @@ type ArchivoSubido = { buffer: Buffer; originalname: string; size: number };
 // Tope de seguridad al recibir; el tamaño máximo real se valida con el parámetro de Configuración
 const LIMITE_SUBIDA = { limits: { fileSize: 52 * 1024 * 1024, files: 1 } };
 
-/** Nombre de archivo seguro para la cabecera de descarga. */
-function disposicion(nombre: string, inline: boolean) {
-  const ascii = nombre.normalize('NFD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '') || 'archivo';
-  return `${inline ? 'inline' : 'attachment'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nombre)}`;
-}
 
 @Controller()
 export class ColaboradoresController {

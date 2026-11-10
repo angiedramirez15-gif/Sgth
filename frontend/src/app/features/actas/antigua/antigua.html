@@ -1,0 +1,187 @@
+<div class="sgth-pagina antigua">
+  <a class="volver" routerLink="/actas"><mat-icon>arrow_back</mat-icon>Actas</a>
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Registrar acta antigua</h1>
+      <p>Para lo que ya se entregó antes del sistema. Suba el acta escaneada y copie sus datos mirándola. No descuenta del inventario de bodega; los equipos y muebles quedan registrados con placa nueva.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+  } @else {
+    <div class="rejilla">
+      <!-- Izquierda: el documento original -->
+      <section class="documento" aria-label="Acta escaneada">
+        @if (vista(); as v) {
+          <div class="documento__barra">
+            <span class="documento__nombre"><mat-icon>description</mat-icon>{{ archivo()?.name }}</span>
+            <button mat-button type="button" (click)="quitarArchivo()">Cambiar</button>
+          </div>
+          @if (v.tipo === 'pdf') {
+            <iframe class="documento__visor" [src]="v.segura" title="Acta escaneada"></iframe>
+          } @else {
+            <div class="documento__visor documento__visor--imagen"><img [src]="v.segura" alt="Acta escaneada"></div>
+          }
+        } @else {
+          <label class="soltar" [class.soltar--encima]="arrastrando()"
+            (dragover)="$event.preventDefault(); arrastrando.set(true)" (dragleave)="arrastrando.set(false)" (drop)="soltar($event)">
+            <input type="file" accept="application/pdf,image/jpeg,image/png" (change)="elegir($event)">
+            <mat-icon>upload_file</mat-icon>
+            <span class="soltar__titulo">Suba el acta escaneada</span>
+            <span class="soltar__ayuda">Arrástrela aquí o haga clic para buscarla. PDF, JPG o PNG.</span>
+          </label>
+        }
+      </section>
+
+      <!-- Derecha: los datos -->
+      <form class="formulario" (ngSubmit)="guardar()" novalidate>
+        <section class="bloque">
+          <h2>Qué se entregó</h2>
+          <div class="tipos" role="radiogroup" aria-label="Qué se entregó">
+            @for (t of tipos; track t.valor) {
+              <button type="button" role="radio" class="tipo" [class.tipo--activo]="tipo() === t.valor" [attr.aria-checked]="tipo() === t.valor" (click)="cambiarTipo(t.valor)">
+                <mat-icon>{{ t.icono }}</mat-icon>{{ t.etiqueta }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="bloque">
+          <h2>A quién y cuándo</h2>
+          <div class="campos">
+            <app-selector-colaborador class="completo" [colaboradores]="colaboradores()" [(valor)]="colaboradorId" etiqueta="Se le entregó a" />
+            <mat-form-field>
+              <mat-label>Fecha de la entrega</mat-label>
+              <input matInput type="date" [ngModel]="fechaOriginal()" (ngModelChange)="fechaOriginal.set($event)" name="fechaOriginal" [max]="hoy">
+              <mat-hint>La que dice el acta en papel</mat-hint>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Motivo</mat-label>
+              <mat-select [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" name="motivo">
+                @for (m of motivos(); track m.valor) { <mat-option [value]="m.valor">{{ m.etiqueta }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            @if (tipo() === 'DOTACION') {
+              <mat-form-field>
+                <mat-label>Período de dotación (opcional)</mat-label>
+                <mat-select [ngModel]="periodoId()" (ngModelChange)="periodoId.set($event)" name="periodo">
+                  <mat-option [value]="null">Sin período</mat-option>
+                  @for (p of opciones()?.periodos ?? []; track p.id) { <mat-option [value]="p.id">Período {{ p.texto }}</mat-option> }
+                </mat-select>
+              </mat-form-field>
+            }
+            @if (tipo() === 'MUEBLES') {
+              <mat-form-field class="completo">
+                <mat-label>Ubicación (opcional)</mat-label>
+                <input matInput [ngModel]="ubicacion()" (ngModelChange)="ubicacion.set($event)" name="ubicacion" maxlength="150">
+              </mat-form-field>
+            }
+          </div>
+
+          <fieldset class="fecha-acta">
+            <legend>Fecha del acta en el sistema</legend>
+            <mat-radio-group [ngModel]="usarFechaHoy()" (ngModelChange)="usarFechaHoy.set($event)" name="usarFechaHoy">
+              <mat-radio-button [value]="false">
+                La de la entrega
+                <span class="pista">El escaneo que subió queda como el acta firmada. No hay que firmar nada más.</span>
+              </mat-radio-button>
+              <mat-radio-button [value]="true">
+                La de hoy
+                <span class="pista">Se genera un acta nueva con fecha de hoy para imprimir y firmar otra vez. El escaneo queda como soporte.</span>
+              </mat-radio-button>
+            </mat-radio-group>
+          </fieldset>
+        </section>
+
+        <section class="bloque">
+          <h2>{{ porUnidad() ? (tipo() === 'EQUIPOS' ? 'Equipos' : 'Muebles') + ' del acta' : 'Elementos del acta' }}</h2>
+          @if (porUnidad()) {
+            <p class="sgth-ayuda">Cada uno se registra en el inventario con placa nueva y queda asignado al colaborador.</p>
+            @if (!elementos().length) {
+              <p class="sgth-error-caja">No hay tipos de {{ tipo() === 'EQUIPOS' ? 'equipo' : 'mueble' }} en el catálogo. <a routerLink="/equipos" [queryParams]="{ ver: 'tipos' }">Créelos primero</a>.</p>
+            }
+            @for (l of lineasActivo(); track $index; let i = $index) {
+              <div class="tarjeta">
+                <div class="tarjeta__cabeza">
+                  <span class="tarjeta__numero">{{ i + 1 }}</span>
+                  <button mat-icon-button type="button" (click)="quitar(i)" [attr.aria-label]="'Quitar ' + (i + 1)"><mat-icon>close</mat-icon></button>
+                </div>
+                <div class="tarjeta__campos">
+                  <mat-form-field class="ancho2" subscriptSizing="dynamic">
+                    <mat-label>Tipo</mat-label>
+                    <mat-select [ngModel]="l.elementoId" (ngModelChange)="cambiarActivo(i, { elementoId: $event })" [name]="'t' + i">
+                      @for (e of elementos(); track e.id) { <mat-option [value]="e.id">{{ e.nombre }}</mat-option> }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-label>Estado</mat-label>
+                    <mat-select [ngModel]="l.condicion" (ngModelChange)="cambiarActivo(i, { condicion: $event })" [name]="'c' + i">
+                      @for (c of condiciones; track c.valor) { <mat-option [value]="c.valor">{{ c.etiqueta }}</mat-option> }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-label>Marca</mat-label>
+                    <input matInput maxlength="80" [ngModel]="l.marca" (ngModelChange)="cambiarActivo(i, { marca: $event })" [name]="'m' + i">
+                  </mat-form-field>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-label>Modelo</mat-label>
+                    <input matInput maxlength="80" [ngModel]="l.modelo" (ngModelChange)="cambiarActivo(i, { modelo: $event })" [name]="'mo' + i">
+                  </mat-form-field>
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-label>Serial</mat-label>
+                    <input matInput maxlength="80" [ngModel]="l.serial" (ngModelChange)="cambiarActivo(i, { serial: $event })" [name]="'s' + i">
+                  </mat-form-field>
+                  <mat-form-field class="ancho3" subscriptSizing="dynamic">
+                    <mat-label>Detalle (opcional)</mat-label>
+                    <input matInput maxlength="255" [ngModel]="l.descripcionAdicional" (ngModelChange)="cambiarActivo(i, { descripcionAdicional: $event })" [name]="'d' + i" placeholder="Color, accesorios, número de línea">
+                  </mat-form-field>
+                </div>
+              </div>
+            }
+          } @else {
+            @if (!elementos().length) {
+              <p class="sgth-error-caja">No hay elementos de este tipo en el catálogo. <a [routerLink]="tipo() === 'DOTACION' ? '/dotacion' : '/equipos'" [queryParams]="tipo() === 'OTROS' ? { ver: 'otros' } : {}">Créelos primero</a>.</p>
+            }
+            @for (l of lineasCantidad(); track $index; let i = $index) {
+              <div class="linea">
+                <mat-form-field class="linea__elemento" subscriptSizing="dynamic">
+                  <mat-label>Elemento</mat-label>
+                  <mat-select [ngModel]="l.elementoId" (ngModelChange)="cambiarCantidad(i, { elementoId: $event })" [name]="'e' + i">
+                    @for (e of elementos(); track e.id) { <mat-option [value]="e.id">{{ e.nombre }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+                @if (manejaTallas(l.elementoId)) {
+                  <mat-form-field class="linea__talla" subscriptSizing="dynamic">
+                    <mat-label>Talla</mat-label>
+                    <input matInput maxlength="10" [ngModel]="l.talla" (ngModelChange)="cambiarCantidad(i, { talla: $event })" [name]="'ta' + i">
+                  </mat-form-field>
+                } @else {
+                  <span class="linea__talla" aria-hidden="true"></span>
+                }
+                <mat-form-field class="linea__cantidad" subscriptSizing="dynamic">
+                  <mat-label>Cantidad</mat-label>
+                  <input matInput type="number" min="1" [ngModel]="l.cantidad" (ngModelChange)="cambiarCantidad(i, { cantidad: $event })" [name]="'ca' + i">
+                </mat-form-field>
+                <button mat-icon-button type="button" (click)="quitar(i)" [attr.aria-label]="'Quitar línea ' + (i + 1)"><mat-icon>close</mat-icon></button>
+              </div>
+            }
+          }
+          <button mat-button type="button" (click)="agregar()"><mat-icon>add</mat-icon>Agregar otro</button>
+
+          <mat-form-field class="observaciones">
+            <mat-label>Observaciones (opcional)</mat-label>
+            <input matInput maxlength="500" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" name="obs">
+          </mat-form-field>
+        </section>
+
+        @if (error()) { <p class="sgth-error-caja" role="alert">{{ error() }}</p> }
+        <div class="pie">
+          <button mat-flat-button type="submit" [disabled]="guardando()">
+            <mat-icon>history_edu</mat-icon>{{ guardando() ? 'Guardando…' : 'Registrar acta antigua' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

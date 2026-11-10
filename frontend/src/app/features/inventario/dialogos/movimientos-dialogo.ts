@@ -6,8 +6,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { mensajeDeError } from '../../../core/autenticacion';
 import { type Elemento, InventarioService, type Movimiento, TIPOS_MOVIMIENTO } from '../inventario.service';
 
-const SUMAN = new Set(['ENTRADA', 'DEVOLUCION', 'AJUSTE_POSITIVO', 'ANULACION']);
-
 @Component({
   selector: 'app-movimientos-dialogo',
   imports: [DatePipe, MatDialogModule, MatButtonModule, MatProgressBarModule],
@@ -82,6 +80,6 @@ export class MovimientosDialogo implements OnInit {
   }
 
   suma(m: Movimiento) {
-    return SUMAN.has(m.tipo);
+    return m.signo > 0;
   }
 }

@@ -47,6 +47,7 @@ export interface Movimiento {
   actaId: number | null;
   usuario: string;
   observacion: string | null;
+  signo: number;
 }
 
 export interface Activo {
@@ -117,7 +118,7 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   AJUSTE_POSITIVO: 'Ajuste (suma)',
   AJUSTE_NEGATIVO: 'Ajuste (resta)',
   BAJA: 'Baja',
-  ANULACION: 'Anulación de acta',
+  ANULACION: 'Acta anulada',
 };
 
 /** Textos de cada categoría para las pantallas. */

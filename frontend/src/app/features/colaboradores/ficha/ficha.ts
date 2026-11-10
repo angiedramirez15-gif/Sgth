@@ -12,6 +12,7 @@ import { SesionService } from '../../../core/sesion.service';
 import { Avatar } from '../../../shared/avatar';
 import { AvisosService } from '../../../shared/avisos.service';
 import { ColaboradoresService, etiqueta, type FichaColaborador, type OpcionesColaborador } from '../colaboradores.service';
+import { EntregasColaborador } from '../../actas/entregas-colaborador';
 import { Expediente } from './expediente';
 import { RetiroDialogo, type DatosRetiro } from './retiro-dialogo';
 
@@ -19,7 +20,7 @@ interface Dato { etiqueta: string; valor: string | number | null | undefined; an
 
 @Component({
   selector: 'app-ficha',
-  imports: [DatePipe, RouterLink, Avatar, Expediente, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
+  imports: [DatePipe, RouterLink, Avatar, Expediente, EntregasColaborador, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
   templateUrl: './ficha.html',
   styleUrl: './ficha.scss',
   providers: [DatePipe, DecimalPipe],
@@ -35,6 +36,7 @@ export class Ficha implements OnInit {
   readonly id = input.required<string>();
 
   protected readonly ficha = signal<FichaColaborador | null>(null);
+  protected readonly totalACargo = signal(0);
   protected readonly opciones = signal<OpcionesColaborador | null>(null);
   protected readonly cargando = signal(true);
   protected readonly noExiste = signal(false);
@@ -44,6 +46,7 @@ export class Ficha implements OnInit {
 
   protected readonly puedeGestionar = this.sesion.puede('colaboradores.gestionar');
   protected readonly puedeVerDocumentos = this.sesion.puede('documentos.ver', 'documentos.ver_sst');
+  protected readonly puedeVerEntregas = this.sesion.puede('actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar');
 
   protected readonly nombre = computed(() => {
     const f = this.ficha();

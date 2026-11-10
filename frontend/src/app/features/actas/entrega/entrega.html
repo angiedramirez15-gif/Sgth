@@ -1,0 +1,209 @@
+<div class="sgth-pagina entrega">
+  <a class="volver" routerLink="/actas"><mat-icon>arrow_back</mat-icon>Actas</a>
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Nueva entrega</h1>
+      <p>Al guardar se descuenta del inventario y se genera el acta en PDF para imprimir y firmar.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+  } @else if (!tipos.length) {
+    <p class="sgth-vacio">Su rol no tiene permiso para registrar entregas.</p>
+  } @else {
+    <div class="rejilla">
+      <form class="formulario" (ngSubmit)="guardar()" novalidate>
+        <!-- 1. Qué se entrega -->
+        <section class="bloque" aria-labelledby="t-tipo">
+          <h2 id="t-tipo">Qué se entrega</h2>
+          <div class="tipos" role="radiogroup" aria-labelledby="t-tipo">
+            @for (t of tipos; track t.valor) {
+              <button type="button" role="radio" class="tipo" [class.tipo--activo]="tipo() === t.valor" [attr.aria-checked]="tipo() === t.valor" (click)="cambiarTipo(t.valor)">
+                <mat-icon>{{ t.icono }}</mat-icon>
+                <span class="tipo__nombre">{{ t.etiqueta }}</span>
+                <span class="tipo__ayuda">{{ t.ayuda }}</span>
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- 2. A quién -->
+        <section class="bloque" aria-labelledby="t-quien">
+          <h2 id="t-quien">A quién y por qué</h2>
+          <div class="campos">
+            <app-selector-colaborador class="completo" [colaboradores]="colaboradores()" [(valor)]="colaboradorId" etiqueta="Recibe" [excluir]="anteriorId()" />
+            @if (tenencia()?.tallas?.length) {
+              <p class="completo pista">
+                <mat-icon>straighten</mat-icon>
+                Tallas en la ficha:
+                @for (t of tenencia()!.tallas; track t.tipo) { <span class="talla-ficha">{{ nombreTalla(t.tipo) }} {{ t.talla }}</span> }
+              </p>
+            }
+
+            @if (porUnidad()) {
+              <mat-checkbox class="completo" [checked]="traspaso()" (change)="cambiarTraspaso($event.checked)">
+                Es un traspaso: los {{ tipo() === 'EQUIPOS' ? 'equipos' : 'muebles' }} los tiene otro colaborador
+              </mat-checkbox>
+              @if (traspaso()) {
+                <app-selector-colaborador class="completo" [colaboradores]="colaboradores()" [valor]="anteriorId()" (valorChange)="cambiarAnterior($event)" etiqueta="Los tiene ahora" [excluir]="colaboradorId()" />
+              }
+            }
+
+            @if (!traspaso()) {
+              <mat-form-field>
+                <mat-label>Motivo</mat-label>
+                <mat-select [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" name="motivo">
+                  @for (m of motivos(); track m.valor) { <mat-option [value]="m.valor">{{ m.etiqueta }}</mat-option> }
+                </mat-select>
+              </mat-form-field>
+            }
+            <mat-form-field>
+              <mat-label>Fecha de entrega</mat-label>
+              <input matInput type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" name="fecha" [max]="hoy">
+            </mat-form-field>
+            @if (tipo() === 'DOTACION') {
+              <mat-form-field>
+                <mat-label>Período de dotación</mat-label>
+                <mat-select [ngModel]="periodoId()" (ngModelChange)="periodoId.set($event)" name="periodo">
+                  <mat-option [value]="null">Sin período</mat-option>
+                  @for (p of periodos(); track p.id) { <mat-option [value]="p.id">Período {{ p.texto }}, hasta {{ p.fechaLimite.slice(8) }}/{{ p.fechaLimite.slice(5, 7) }}</mat-option> }
+                </mat-select>
+              </mat-form-field>
+              @if (dotacionDelPeriodo(); as d) {
+                <p class="completo aviso-suave">
+                  <mat-icon>info</mat-icon>
+                  Ya recibió la dotación de este período con el acta <a [routerLink]="['/actas', d.actaId]">{{ d.consecutivo }}</a>.
+                </p>
+              }
+            }
+            @if (tipo() === 'MUEBLES') {
+              <mat-form-field class="completo">
+                <mat-label>Ubicación del puesto (opcional)</mat-label>
+                <input matInput [ngModel]="ubicacion()" (ngModelChange)="ubicacion.set($event)" name="ubicacion" maxlength="150" placeholder="Oficina administrativa, segundo piso">
+              </mat-form-field>
+            }
+          </div>
+        </section>
+
+        <!-- 3. Elementos -->
+        <section class="bloque" aria-labelledby="t-elementos">
+          <h2 id="t-elementos">{{ porUnidad() ? (tipo() === 'EQUIPOS' ? 'Equipos' : 'Muebles') : 'Elementos' }}</h2>
+
+          @if (porUnidad()) {
+            @if (traspaso() && !anteriorId()) {
+              <p class="vacio">Seleccione arriba quién los tiene para ver sus {{ tipo() === 'EQUIPOS' ? 'equipos' : 'muebles' }}.</p>
+            } @else {
+              <mat-form-field class="busqueda" subscriptSizing="dynamic">
+                <mat-icon matPrefix>search</mat-icon>
+                <mat-label>Buscar por placa, serial o marca</mat-label>
+                <input matInput [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" name="busqueda">
+              </mat-form-field>
+              <ul class="activos" [attr.aria-label]="'Disponibles para entregar'">
+                @for (a of candidatos(); track a.id) {
+                  <li>
+                    <mat-checkbox [checked]="seleccion().has(a.id)" (change)="marcar(a, $event.checked)">
+                      <span class="activo">
+                        <span class="activo__placa">{{ a.placa }}</span>
+                        <span class="activo__nombre">{{ a.elemento }}</span>
+                        <span class="activo__detalle">{{ [a.marca, a.modelo].join(' ').trim() }}{{ a.serial ? (a.marca || a.modelo ? ', ' : '') + 'S/N ' + a.serial : '' }}</span>
+                      </span>
+                    </mat-checkbox>
+                  </li>
+                } @empty {
+                  <li class="vacio">
+                    @if (busqueda()) { Nada coincide con "{{ busqueda() }}". }
+                    @else if (traspaso()) { {{ anterior()?.nombres }} no tiene {{ tipo() === 'EQUIPOS' ? 'equipos' : 'muebles' }} asignados. }
+                    @else { No hay {{ tipo() === 'EQUIPOS' ? 'equipos' : 'muebles' }} disponibles en bodega. <a routerLink="/equipos">Registrar uno</a> }
+                  </li>
+                }
+              </ul>
+            }
+          } @else {
+            <div class="lineas">
+              @for (l of lineasDetalle(); track $index; let i = $index) {
+                <div class="linea" [class.linea--error]="intento() && l.elemento && ((l.cantidad ?? 0) > l.hay || l.repetida)">
+                  <mat-form-field class="linea__elemento" subscriptSizing="dynamic">
+                    <mat-label>Elemento</mat-label>
+                    <mat-select [ngModel]="l.elementoId" (ngModelChange)="cambiarLinea(i, { elementoId: $event })" [name]="'el' + i">
+                      @for (e of elementos(); track e.id) {
+                        <mat-option [value]="e.id" [disabled]="e.total === 0">{{ e.nombre }} <span class="stock-opcion">({{ e.total }} en bodega)</span></mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  @if (l.elemento?.manejaTallas) {
+                    <mat-form-field class="linea__talla" subscriptSizing="dynamic">
+                      <mat-label>Talla</mat-label>
+                      <mat-select [ngModel]="l.talla" (ngModelChange)="cambiarLinea(i, { talla: $event })" [name]="'ta' + i">
+                        <mat-select-trigger>{{ l.talla }}{{ l.talla === l.sugerida ? ' (su talla)' : '' }}</mat-select-trigger>
+                        @for (x of l.elemento!.existencias; track x.talla) {
+                          <mat-option [value]="x.talla">{{ x.talla }}: {{ x.cantidad }} en bodega{{ x.talla === l.sugerida ? ', su talla' : '' }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  } @else {
+                    <span class="linea__talla" aria-hidden="true"></span>
+                  }
+                  <mat-form-field class="linea__cantidad" subscriptSizing="dynamic">
+                    <mat-label>Cantidad</mat-label>
+                    <input matInput type="number" min="1" [ngModel]="l.cantidad" (ngModelChange)="cambiarLinea(i, { cantidad: $event })" [name]="'ca' + i">
+                  </mat-form-field>
+                  <button mat-icon-button type="button" (click)="quitarLinea(i)" [attr.aria-label]="'Quitar línea ' + (i + 1)"><mat-icon>close</mat-icon></button>
+                  @if (l.elemento && (!l.elemento.manejaTallas || l.talla)) {
+                    <span class="linea__stock" [class.linea__stock--falta]="(l.cantidad ?? 0) > l.hay">
+                      {{ (l.cantidad ?? 0) > l.hay ? 'Solo hay ' + l.hay + ' en bodega' : 'Quedan ' + (l.hay - (l.cantidad ?? 0)) + ' en bodega' }}
+                    </span>
+                  }
+                </div>
+              }
+              <button mat-button type="button" (click)="agregarLinea()"><mat-icon>add</mat-icon>Agregar otro elemento</button>
+              @if (!elementos().length) {
+                <p class="vacio">No hay elementos de {{ textoTipo().etiqueta.toLowerCase() }} en el catálogo. <a [routerLink]="tipo() === 'DOTACION' ? '/dotacion' : '/equipos'" [queryParams]="tipo() === 'OTROS' ? { ver: 'otros' } : {}">Ir al inventario</a></p>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="bloque" aria-labelledby="t-obs">
+          <h2 id="t-obs">Observaciones</h2>
+          <mat-form-field class="ancho">
+            <mat-label>Observaciones (opcional)</mat-label>
+            <textarea matInput rows="2" maxlength="500" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" name="obs"></textarea>
+            <mat-hint>Salen en el acta, debajo de la tabla</mat-hint>
+          </mat-form-field>
+        </section>
+      </form>
+
+      <!-- Resumen: una miniatura de lo que dirá el acta -->
+      <aside class="resumen" aria-labelledby="t-resumen">
+        <div class="hoja">
+          <p class="hoja__numero">El número del acta se asigna al guardar</p>
+          <h2 id="t-resumen" class="hoja__titulo">Acta de entrega de {{ textoTipo().etiqueta.toLowerCase() }}</h2>
+          <dl class="hoja__datos">
+            <div><dt>Recibe</dt><dd>{{ colaborador() ? colaborador()!.nombres + ' ' + colaborador()!.apellidos : '—' }}</dd></div>
+            @if (colaborador()) { <div><dt>Cargo</dt><dd>{{ colaborador()!.cargo }}</dd></div> }
+            @if (traspaso()) { <div><dt>Viene de</dt><dd>{{ anterior() ? anterior()!.nombres + ' ' + anterior()!.apellidos : '—' }}</dd></div> }
+            <div><dt>Fecha</dt><dd>{{ fecha() | date: 'd MMM y' }}</dd></div>
+          </dl>
+          <p class="hoja__subtitulo">{{ porUnidad() ? elegidos().length : lineasDetalle().filter((l) => l.elemento).length }} elemento{{ (porUnidad() ? elegidos().length : lineasDetalle().filter((l) => l.elemento).length) === 1 ? '' : 's' }}</p>
+          <ul class="hoja__lista">
+            @if (porUnidad()) {
+              @for (a of elegidos(); track a.id) { <li><span>{{ a.elemento }}</span><span class="hoja__ref">{{ a.placa }}</span></li> }
+            } @else {
+              @for (l of lineasDetalle(); track $index) {
+                @if (l.elemento) { <li><span>{{ l.cantidad }} × {{ l.elemento.nombre }}</span><span class="hoja__ref">{{ l.elemento.manejaTallas ? (l.talla || 'sin talla') : l.elemento.unidad }}</span></li> }
+              }
+            }
+          </ul>
+        </div>
+        @if (error()) { <p class="sgth-error-caja" role="alert">{{ error() }}</p> }
+        <button mat-flat-button class="guardar" type="button" (click)="guardar()" [disabled]="guardando()">
+          <mat-icon>description</mat-icon>{{ guardando() ? 'Guardando…' : 'Registrar y generar acta' }}
+        </button>
+        @if (intento() && problemas().length > 1) {
+          <ul class="faltan">@for (p of problemas().slice(1); track p) { <li>{{ p }}</li> }</ul>
+        }
+      </aside>
+    </div>
+  }
+</div>

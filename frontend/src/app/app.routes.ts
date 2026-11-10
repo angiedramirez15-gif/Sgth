@@ -9,6 +9,7 @@ const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
   'administracion/usuarios': () => import('./features/administracion/usuarios/usuarios').then((c) => c.Usuarios),
   'administracion/catalogos': () => import('./features/administracion/catalogos/catalogos').then((c) => c.Catalogos),
   dotacion: () => import('./features/inventario/dotacion/dotacion').then((c) => c.Dotacion),
+  actas: () => import('./features/actas/listado/listado-actas').then((c) => c.ListadoActas),
   equipos: () => import('./features/inventario/equipos/equipos').then((c) => c.Equipos),
   'administracion/configuracion': () => import('./features/administracion/configuracion/configuracion').then((c) => c.Configuracion),
 };
@@ -29,6 +30,18 @@ const colaboradores: Routes = [
 const inventario: Routes = [
   { path: 'equipos/activos/:id', title: 'Equipo o mueble · SGTH', canActivate: [requierePermiso], data: { titulo: 'Equipos y muebles', permisos: ['inventario_activos.ver', 'inventario_activos.gestionar'] },
     loadComponent: () => import('./features/inventario/activo/activo').then((c) => c.ActivoFicha) },
+];
+
+// Entregas, devoluciones y detalle de cada acta
+const actas: Routes = [
+  { path: 'actas/entrega', title: 'Nueva entrega · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+    loadComponent: () => import('./features/actas/entrega/entrega').then((c) => c.Entrega) },
+  { path: 'actas/antigua', title: 'Registrar acta antigua · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+    loadComponent: () => import('./features/actas/antigua/antigua').then((c) => c.Antigua) },
+  { path: 'actas/devolucion', title: 'Registrar devolución · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_activos.gestionar'] },
+    loadComponent: () => import('./features/actas/devolucion/devolucion').then((c) => c.Devolucion) },
+  { path: 'actas/:id', title: 'Acta · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+    loadComponent: () => import('./features/actas/detalle/detalle').then((c) => c.DetalleActa) },
 ];
 
 const modulos: Routes = [...MENU_PRINCIPAL, ...MENU_ADMINISTRACION].map((m) => ({
@@ -65,6 +78,7 @@ export const routes: Routes = [
       },
       ...colaboradores,
       ...inventario,
+      ...actas,
       ...modulos,
     ],
   },

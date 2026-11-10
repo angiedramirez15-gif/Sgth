@@ -14,7 +14,7 @@ export const MENU_PRINCIPAL: OpcionMenu[] = [
   { ruta: 'dotacion', titulo: 'Dotación', icono: 'apparel', descripcion: 'Inventario de uniformes y calzado, y entregas por período.', permisos: ['inventario_dotacion.ver', 'actas_dotacion.gestionar'], fase: 4, disponible: true },
   { ruta: 'epp', titulo: 'EPP', icono: 'health_and_safety', descripcion: 'Elementos de protección personal, matriz por cargo y reposiciones.', permisos: ['inventario_epp.ver', 'actas_epp.gestionar'], fase: 5 },
   { ruta: 'equipos', titulo: 'Equipos y muebles', icono: 'devices', descripcion: 'Computadores, celulares, herramientas y muebles asignados.', permisos: ['inventario_activos.ver', 'actas_activos.gestionar'], fase: 4, disponible: true },
-  { ruta: 'actas', titulo: 'Actas', icono: 'contract', descripcion: 'Actas de entrega y devolución, y carga del acta firmada.', permisos: ['actas.ver'], fase: 4 },
+  { ruta: 'actas', titulo: 'Actas', icono: 'contract', descripcion: 'Actas de entrega y devolución, y carga del acta firmada.', permisos: ['actas.ver'], fase: 4, disponible: true },
   { ruta: 'alertas', titulo: 'Alertas', icono: 'notifications', descripcion: 'Documentos por vencer, reposición de EPP y dotación pendiente.', permisos: ['alertas_th.ver', 'alertas_sst.ver'], fase: 6 },
   { ruta: 'reportes', titulo: 'Reportes', icono: 'table_chart', descripcion: 'Listados exportables a Excel.', permisos: ['reportes.ver'], fase: 6 },
 ];

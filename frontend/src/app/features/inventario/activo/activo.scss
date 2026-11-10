@@ -71,7 +71,7 @@
   border: 1px solid var(--sgth-linea);
   color: var(--sgth-tinta-suave);
 
-  p { margin: 0; }
+  p { margin: 0; flex: 1; }
   mat-icon { color: var(--sgth-tinta-suave); }
 
   &--asignado {
@@ -170,3 +170,5 @@
   .columnas { grid-template-columns: 1fr; }
   .datos div { grid-template-columns: 1fr; gap: 0; }
 }
+
+.tenencia__acciones { display: flex; flex-wrap: wrap; gap: 4px; }

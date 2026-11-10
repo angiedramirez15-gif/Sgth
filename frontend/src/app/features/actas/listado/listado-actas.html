@@ -1,0 +1,101 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Actas</h1>
+      <p>
+        {{ filas().length }} acta{{ filas().length === 1 ? '' : 's' }} de entrega y devolución.
+        @if (pendientes()) {
+          <button class="pendientes" type="button" (click)="estado.set('PENDIENTE_ACTA')">
+            {{ pendientes() }} sin la firmada cargada
+          </button>
+        }
+      </p>
+    </div>
+    <div class="acciones">
+      @if (puedeEntregar) {
+        <a mat-button routerLink="/actas/antigua"><mat-icon>history_edu</mat-icon>Acta antigua</a>
+      }
+      @if (puedeDevolver) {
+        <a mat-stroked-button routerLink="/actas/devolucion"><mat-icon>assignment_return</mat-icon>Registrar devolución</a>
+      }
+      @if (puedeEntregar) {
+        <a mat-flat-button routerLink="/actas/entrega"><mat-icon>add</mat-icon>Nueva entrega</a>
+      }
+    </div>
+  </header>
+
+  <div class="sgth-filtros">
+    <mat-form-field class="busqueda" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar por número, colaborador, documento o placa</mat-label>
+      <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Tipo</mat-label>
+      <mat-select [ngModel]="plantilla()" (ngModelChange)="plantilla.set($event)">
+        <mat-option value="">Todos</mat-option>
+        @for (p of plantillasUsadas(); track p) { <mat-option [value]="p">{{ nombres[p] }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-button-toggle-group [value]="estado()" (change)="estado.set($event.value)" aria-label="Estado" hideSingleSelectionIndicator>
+      <mat-button-toggle value="">Todas</mat-button-toggle>
+      <mat-button-toggle value="PENDIENTE_ACTA">Sin firmada</mat-button-toggle>
+      <mat-button-toggle value="COMPLETA">Firmadas</mat-button-toggle>
+      <mat-button-toggle value="ANULADA">Anuladas</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="sgth-marco">
+    @if (cargando()) { <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando actas" /> }
+    <table class="sgth-tabla">
+      <thead>
+        <tr>
+          <th scope="col">Acta</th>
+          <th scope="col">Colaborador</th>
+          <th scope="col">Fecha</th>
+          <th scope="col">Elementos</th>
+          <th scope="col">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of filtradas(); track f.id) {
+          <tr class="fila" [class.inactivo]="f.estado === 'ANULADA'" (click)="abrir(f)">
+            <td>
+              <a class="numero" [routerLink]="['/actas', f.id]" (click)="$event.stopPropagation()">{{ f.consecutivo }}</a>
+              <span class="secundario">{{ nombres[f.plantilla] }}{{ f.motivo === 'TRASPASO' ? ', traspaso' : '' }}{{ f.esHistorica ? ', antigua' : '' }}</span>
+            </td>
+            <td>
+              <a [routerLink]="['/colaboradores', f.colaboradorId]" (click)="$event.stopPropagation()">{{ f.colaborador }}</a>
+              <span class="secundario">{{ f.documento }}</span>
+            </td>
+            <td>{{ f.fecha | date: 'd MMM y' }}</td>
+            <td class="resumen">
+              <span class="sgth-cifra">{{ f.elementos }}</span>
+              <span class="secundario resumen__texto">{{ f.resumen }}</span>
+            </td>
+            <td>
+              <span class="sgth-estado" [class.sgth-estado--alerta]="f.estado === 'PENDIENTE_ACTA'" [class.sgth-estado--activo]="f.estado === 'COMPLETA'" [class.sgth-estado--inactivo]="f.estado === 'ANULADA'">
+                {{ estados[f.estado] }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          @if (!cargando()) {
+            <tr>
+              <td colspan="5" class="sgth-vacio">
+                @if (error()) {
+                  No se pudieron cargar las actas. <button mat-button (click)="cargar()">Intentar de nuevo</button>
+                } @else if (!filas().length) {
+                  Aún no hay actas. Cada entrega o devolución que registre genera su acta aquí.
+                  @if (puedeEntregar) { <span class="vacio-acciones"><a mat-flat-button routerLink="/actas/entrega">Registrar la primera entrega</a></span> }
+                } @else {
+                  Ninguna acta coincide con los filtros. <button mat-button (click)="limpiar()">Quitar filtros</button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

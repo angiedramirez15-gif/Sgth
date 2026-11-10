@@ -1,0 +1,110 @@
+<div class="sgth-pagina devolucion">
+  <a class="volver" routerLink="/actas"><mat-icon>arrow_back</mat-icon>Actas</a>
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Registrar devolución</h1>
+      <p>Para cuando un colaborador entrega lo que tenía a cargo: por retiro, cambio de cargo o daño. El acta queda como soporte de su paz y salvo.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+  } @else {
+    <section class="bloque">
+      <div class="campos">
+        <app-selector-colaborador class="campos__quien" [colaboradores]="colaboradores()" [(valor)]="colaboradorId" etiqueta="Devuelve" />
+        <mat-form-field>
+          <mat-label>Motivo</mat-label>
+          <mat-select [ngModel]="motivo()" (ngModelChange)="motivo.set($event)">
+            @for (m of motivos(); track m.valor) { <mat-option [value]="m.valor">{{ m.etiqueta }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Fecha</mat-label>
+          <input matInput type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" [max]="hoy">
+        </mat-form-field>
+      </div>
+    </section>
+
+    @if (colaboradorId()) {
+      <section class="bloque" aria-labelledby="t-tiene">
+        <div class="bloque__titulo">
+          <h2 id="t-tiene">Lo que tiene a cargo</h2>
+          @if (renglones().length > 1) {
+            <button mat-button type="button" (click)="marcarTodo(marcados().length !== renglones().length)">
+              {{ marcados().length === renglones().length ? 'Desmarcar todo' : 'Marcar todo' }}
+            </button>
+          }
+        </div>
+        @if (cargandoTenencia()) {
+          <mat-progress-bar mode="indeterminate" aria-label="Consultando" />
+        } @else if (!renglones().length) {
+          <p class="vacio">
+            <mat-icon>task_alt</mat-icon>
+            {{ colaborador()?.nombres }} no tiene equipos, muebles ni elementos a cargo según las actas registradas.
+          </p>
+        } @else {
+          <ul class="renglones">
+            @for (r of renglones(); track r.clave) {
+              <li class="renglon" [class.renglon--marcado]="r.marcado">
+                <mat-checkbox [checked]="r.marcado" (change)="cambiar(r, { marcado: $event.checked })">
+                  <span class="renglon__titulo">{{ r.titulo }}</span>
+                  <span class="renglon__detalle">{{ r.detalle }}</span>
+                </mat-checkbox>
+                @if (r.marcado) {
+                  <div class="renglon__campos">
+                    @if (!r.activoId) {
+                      <mat-form-field subscriptSizing="dynamic" class="corto">
+                        <mat-label>Cantidad</mat-label>
+                        <input matInput type="number" min="1" [max]="r.maximo" [ngModel]="r.cantidad" (ngModelChange)="cambiar(r, { cantidad: $event })">
+                      </mat-form-field>
+                    }
+                    <mat-form-field subscriptSizing="dynamic">
+                      <mat-label>Se recibe en estado</mat-label>
+                      <mat-select [ngModel]="r.condicion" (ngModelChange)="cambiar(r, { condicion: $event })">
+                        @for (c of condiciones; track c.valor) { <mat-option [value]="c.valor">{{ c.etiqueta }}</mat-option> }
+                      </mat-select>
+                    </mat-form-field>
+                    @if (r.activoId) {
+                      <mat-form-field subscriptSizing="dynamic">
+                        <mat-label>Queda</mat-label>
+                        <mat-select [ngModel]="r.quedaEn" (ngModelChange)="cambiar(r, { quedaEn: $event })">
+                          <mat-option value="DISPONIBLE">Disponible en bodega</mat-option>
+                          <mat-option value="EN_REPARACION">En reparación</mat-option>
+                          <mat-option value="DADO_DE_BAJA">Dado de baja</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    } @else {
+                      <mat-checkbox class="reingresa" [checked]="r.reingresa" (change)="cambiar(r, { reingresa: $event.checked })">Vuelve al stock</mat-checkbox>
+                    }
+                    <mat-form-field subscriptSizing="dynamic" class="obs">
+                      <mat-label>Observación (daños, faltantes)</mat-label>
+                      <input matInput maxlength="255" [ngModel]="r.observaciones" (ngModelChange)="cambiar(r, { observaciones: $event })">
+                    </mat-form-field>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+
+          <mat-form-field class="ancho">
+            <mat-label>Observaciones generales (opcional)</mat-label>
+            <textarea matInput rows="2" maxlength="500" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)"></textarea>
+          </mat-form-field>
+        }
+      </section>
+
+      @if (renglones().length) {
+        <div class="pie">
+          @if (error()) { <p class="sgth-error-caja" role="alert">{{ error() }}</p> }
+          <span class="pie__cuenta">{{ marcados().length }} de {{ renglones().length }} marcado{{ renglones().length === 1 ? '' : 's' }}</span>
+          <button mat-flat-button (click)="guardar()" [disabled]="guardando() || !marcados().length">
+            <mat-icon>assignment_return</mat-icon>{{ guardando() ? 'Guardando…' : 'Registrar devolución y generar acta' }}
+          </button>
+        </div>
+      }
+    } @else if (error()) {
+      <p class="sgth-error-caja" role="alert">{{ error() }}</p>
+    }
+  }
+</div>

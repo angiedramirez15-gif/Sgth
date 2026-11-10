@@ -1,0 +1,117 @@
+<div class="sgth-pagina detalle">
+  <a class="volver" routerLink="/actas"><mat-icon>arrow_back</mat-icon>Actas</a>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando acta" />
+  } @else if (noExiste()) {
+    <p class="sgth-vacio">No se encontró el acta. <a routerLink="/actas">Volver a la lista</a></p>
+  } @else if (acta(); as a) {
+    @if (nueva && a.estado === 'COMPLETA' && a.esHistorica) {
+      <section class="siguiente" aria-label="Resultado">
+        <h2><mat-icon>check_circle</mat-icon>Acta antigua registrada como {{ a.consecutivo }}</h2>
+        <p class="siguiente__texto">El escaneo quedó como el acta firmada y los elementos ya figuran a cargo de {{ a.colaborador }}.</p>
+      </section>
+    }
+    @if (nueva && a.estado === 'PENDIENTE_ACTA') {
+      <!-- Lo que sigue después de registrar: los tres pasos del papel -->
+      <section class="siguiente" aria-labelledby="t-siguiente">
+        <h2 id="t-siguiente"><mat-icon>check_circle</mat-icon>{{ a.tipo === 'DEVOLUCION' ? 'Devolución registrada' : a.esHistorica ? 'Acta antigua registrada' : 'Entrega registrada' }} con el acta {{ a.consecutivo }}</h2>
+        <ol>
+          <li><button mat-flat-button (click)="verPdf()"><mat-icon>print</mat-icon>Abrir el PDF e imprimir</button></li>
+          <li>Hacerla firmar por las dos partes</li>
+          <li>Escanearla y subirla aquí</li>
+        </ol>
+      </section>
+    }
+
+    <header class="cabecera" [class.cabecera--anulada]="a.estado === 'ANULADA'">
+      <div>
+        <p class="cabecera__tipo">{{ titulo() }}{{ a.esHistorica ? ', acta antigua' : '' }}</p>
+        <h1 class="cabecera__numero">{{ a.consecutivo }}</h1>
+        <p class="cabecera__estado">
+          <span class="sgth-estado" [class.sgth-estado--alerta]="a.estado === 'PENDIENTE_ACTA'" [class.sgth-estado--activo]="a.estado === 'COMPLETA'" [class.sgth-estado--error]="a.estado === 'ANULADA'">
+            {{ estados[a.estado] }}
+          </span>
+          @if (a.estado === 'COMPLETA' && a.fechaCargaFirmada) { <span class="secundario">Cargada el {{ a.fechaCargaFirmada.replace(' ', 'T') | date: 'd MMM y' }}</span> }
+        </p>
+      </div>
+      <div class="cabecera__acciones">
+        <button mat-stroked-button (click)="verPdf()"><mat-icon>picture_as_pdf</mat-icon>PDF para imprimir</button>
+        @if (a.tieneSoporte && (!a.tieneFirmada || a.fecha !== a.fechaEntregaOriginal)) {
+          <button mat-stroked-button (click)="verOriginal()"><mat-icon>history_edu</mat-icon>Documento original</button>
+        }
+        @if (a.tieneFirmada) {
+          <button mat-stroked-button (click)="verFirmada()"><mat-icon>verified</mat-icon>Ver firmada</button>
+        }
+        @if (puedeGestionar() && a.estado !== 'ANULADA') {
+          <label class="subir" [class.subir--ocupado]="subiendo()">
+            <input type="file" accept="application/pdf,image/jpeg,image/png" (change)="subir($event)" [disabled]="subiendo()">
+            <mat-icon>upload_file</mat-icon>{{ subiendo() ? 'Subiendo…' : a.tieneFirmada ? 'Reemplazar firmada' : 'Subir firmada' }}
+          </label>
+          <button mat-icon-button [matMenuTriggerFor]="mas" aria-label="Más opciones"><mat-icon>more_vert</mat-icon></button>
+          <mat-menu #mas="matMenu" xPosition="before">
+            <button mat-menu-item (click)="nuevaEntrega()"><mat-icon>add</mat-icon>Otra entrega a esta persona</button>
+            <button mat-menu-item (click)="anular()"><mat-icon>block</mat-icon>Anular acta</button>
+          </mat-menu>
+        }
+      </div>
+    </header>
+
+    @if (a.estado === 'ANULADA') {
+      <p class="anulada"><mat-icon>block</mat-icon>Anulada el {{ a.anuladaEn?.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}: {{ a.motivoAnulacion }}</p>
+    }
+
+    <div class="columnas">
+      <section class="bloque" aria-labelledby="t-datos">
+        <h2 id="t-datos">Datos del acta</h2>
+        <dl class="datos">
+          <div><dt>{{ a.tipo === 'DEVOLUCION' ? 'Devuelve' : 'Recibe' }}</dt><dd><a [routerLink]="['/colaboradores', a.colaboradorId]">{{ a.colaborador }}</a></dd></div>
+          @if (a.colaboradorAnterior) {
+            <div><dt>Viene de</dt><dd><a [routerLink]="['/colaboradores', a.colaboradorAnteriorId]">{{ a.colaboradorAnterior }}</a></dd></div>
+          }
+          <div><dt>Fecha del acta</dt><dd>{{ a.fecha | date: 'd MMM y' }}</dd></div>
+          @if (a.fechaEntregaOriginal && a.fechaEntregaOriginal !== a.fecha) {
+            <div><dt>Entrega real</dt><dd>{{ a.fechaEntregaOriginal | date: 'd MMM y' }}</dd></div>
+          }
+          <div><dt>Motivo</dt><dd>{{ a.motivoTexto }}</dd></div>
+          @if (a.periodo) { <div><dt>Período</dt><dd>Dotación {{ a.periodo }}</dd></div> }
+          @if (a.ubicacion) { <div><dt>Ubicación</dt><dd>{{ a.ubicacion }}</dd></div> }
+          @if (a.observaciones) { <div><dt>Observaciones</dt><dd>{{ a.observaciones }}</dd></div> }
+          <div><dt>Registró</dt><dd>{{ a.registradaPor }}, {{ a.creadoEn.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="bloque bloque--ancho" aria-labelledby="t-elementos">
+        <h2 id="t-elementos">{{ a.lineas.length }} elemento{{ a.lineas.length === 1 ? '' : 's' }}</h2>
+        <div class="sgth-marco">
+          <table class="sgth-tabla">
+            <thead>
+              <tr>
+                <th scope="col" class="num">Cant.</th>
+                <th scope="col">Descripción</th>
+                @if (porUnidad()) { <th scope="col">Placa</th> }
+                @if (porCantidad()) { <th scope="col">Talla</th> }
+                <th scope="col">Estado</th>
+                @if (a.tipo === 'DEVOLUCION') { <th scope="col">Observaciones</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of a.lineas; track l.id) {
+                <tr>
+                  <td class="num sgth-cifra">{{ l.cantidad }}</td>
+                  <td>{{ l.elemento }}@if (l.marca || l.modelo) { <span class="secundario">{{ l.marca }} {{ l.modelo }}</span> }</td>
+                  @if (porUnidad()) {
+                    <td>@if (l.activoId) { <a class="placa" [routerLink]="['/equipos/activos', l.activoId]">{{ l.placa }}</a> } @else { — }</td>
+                  }
+                  @if (porCantidad()) { <td>{{ l.talla === 'UNICA' ? '—' : l.talla }}</td> }
+                  <td>{{ l.condicion ? (l.condicion.charAt(0) + l.condicion.slice(1).toLowerCase()) : '—' }}</td>
+                  @if (a.tipo === 'DEVOLUCION') { <td>{{ l.observaciones || '—' }}</td> }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  }
+</div>

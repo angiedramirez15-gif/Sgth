@@ -51,6 +51,8 @@ export interface Movimiento {
   actaId: number | null;
   usuario: string;
   observacion: string | null;
+  /** 1 suma al stock, -1 resta. */
+  signo: number;
 }
 
 function aElemento(f: FilaElemento): Elemento {
@@ -232,7 +234,10 @@ export class ElementosService {
     return this.db.consultar<Movimiento>(
       `SELECT m.id, DATE_FORMAT(m.fecha, '%Y-%m-%d %H:%i') AS fecha, m.tipo_movimiento AS tipo, m.talla, m.cantidad,
               a.placa_inventario AS placa, p.nombre AS proveedor, m.numero_factura AS numeroFactura,
-              ac.consecutivo AS acta, m.acta_id AS actaId, us.nombre_completo AS usuario, m.observacion
+              ac.consecutivo AS acta, m.acta_id AS actaId, us.nombre_completo AS usuario, m.observacion,
+              CASE WHEN m.tipo_movimiento IN ('ENTRADA', 'DEVOLUCION', 'AJUSTE_POSITIVO') THEN 1
+                   WHEN m.tipo_movimiento = 'ANULACION' AND ac.tipo_acta = 'ENTREGA' THEN 1
+                   ELSE -1 END AS signo
          FROM movimientos_inventario m
          JOIN usuarios us ON us.id = m.usuario_id
          LEFT JOIN activos a ON a.id = m.activo_id

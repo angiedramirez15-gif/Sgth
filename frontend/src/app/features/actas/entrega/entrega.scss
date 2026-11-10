@@ -1,0 +1,219 @@
+.entrega { max-width: 1180px; }
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  text-decoration: none;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.bloque {
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+
+  h2 { margin-bottom: 14px; font-size: 1rem; }
+}
+
+// --- Tipo de entrega ---
+.tipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+
+.tipo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--sgth-tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  mat-icon { grid-row: span 2; color: var(--sgth-tinta-suave); }
+  &:hover { border-color: var(--sgth-petroleo); }
+  &:focus-visible { outline: 2px solid var(--sgth-petroleo); outline-offset: 2px; }
+
+  &--activo {
+    border-color: var(--sgth-petroleo);
+    background: var(--sgth-petroleo-suave);
+    box-shadow: inset 0 0 0 1px var(--sgth-petroleo);
+
+    mat-icon { color: var(--sgth-petroleo); }
+  }
+}
+
+.tipo__nombre { font-weight: 600; }
+.tipo__ayuda { font-size: 0.78rem; color: var(--sgth-tinta-suave); }
+
+// --- Campos ---
+.campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+
+  mat-form-field { width: 100%; }
+  .completo { grid-column: 1 / -1; }
+  mat-checkbox { margin: 2px 0 6px; }
+}
+
+.pista, .aviso-suave {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: -2px 0 6px;
+  font-size: 0.85rem;
+  color: var(--sgth-tinta-suave);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.aviso-suave {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--sgth-ambar-fondo);
+  color: #6b4100;
+}
+
+.talla-ficha {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--sgth-petroleo-suave);
+  color: var(--sgth-petroleo-profundo);
+  font-weight: 600;
+}
+
+// --- Activos ---
+.busqueda { width: 100%; max-width: 420px; margin-bottom: 8px; }
+
+.activos {
+  display: grid;
+  gap: 0;
+  max-height: 380px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 6px;
+
+  li { padding: 4px 10px; border-bottom: 1px solid var(--sgth-linea); }
+  li:last-child { border-bottom: 0; }
+  li.vacio { padding: 18px; }
+}
+
+.activo { display: grid; grid-template-columns: 112px 1fr; gap: 0 12px; align-items: baseline; }
+.activo__placa { grid-row: span 2; color: var(--sgth-petroleo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.activo__nombre { font-weight: 500; }
+.activo__detalle { font-size: 0.8rem; color: var(--sgth-tinta-suave); }
+
+// --- Líneas por cantidad ---
+.lineas { display: grid; gap: 4px; }
+
+.linea {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 100px 40px;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 6px 0;
+
+  &--error .linea__cantidad { --mdc-outlined-text-field-outline-color: var(--sgth-error); }
+}
+
+.linea__stock {
+  grid-column: 1 / -1;
+  margin-top: -2px;
+  font-size: 0.8rem;
+  color: var(--sgth-tinta-suave);
+
+  &--falta { color: var(--sgth-error); font-weight: 600; }
+}
+
+.stock-opcion { color: var(--sgth-tinta-suave); font-size: 0.85em; }
+
+.vacio { margin: 6px 0; color: var(--sgth-tinta-suave); }
+
+.ancho { width: 100%; }
+
+// --- Resumen: miniatura del acta en papel ---
+.resumen { position: sticky; top: 16px; display: grid; gap: 12px; }
+
+.hoja {
+  position: relative;
+  padding: 22px 20px 18px;
+  background: #fff;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 #fff, 0 3px 0 -1px #e8eeee, 0 3px 0 0 var(--sgth-linea);
+
+  // Línea petróleo del encabezado del formato de la empresa
+  &::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--sgth-petroleo);
+  }
+}
+
+.hoja__numero { margin: 8px 0 2px; font-size: 0.72rem; color: var(--sgth-tinta-suave); text-align: center; }
+.hoja__titulo { margin: 0 0 14px; font-size: 0.92rem; text-align: center; text-transform: none; }
+
+.hoja__datos {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+
+  div { display: grid; grid-template-columns: 64px 1fr; gap: 8px; }
+  dt { color: var(--sgth-tinta-suave); }
+  dd { margin: 0; font-weight: 500; }
+}
+
+.hoja__subtitulo { margin: 0 0 6px; padding-top: 10px; border-top: 1px solid var(--sgth-linea); font-size: 0.8rem; font-weight: 600; color: var(--sgth-tinta-suave); }
+
+.hoja__lista {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+
+  li { display: flex; justify-content: space-between; gap: 10px; }
+}
+
+.hoja__ref { color: var(--sgth-petroleo); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.guardar { width: 100%; height: 46px; }
+
+.faltan { margin: 0; padding-left: 18px; font-size: 0.82rem; color: var(--sgth-tinta-suave); }
+
+@media (max-width: 960px) {
+  .rejilla { grid-template-columns: 1fr; }
+  .resumen { position: static; }
+}
+
+@media (max-width: 600px) {
+  .campos { grid-template-columns: 1fr; }
+  .linea { grid-template-columns: 1fr 1fr 40px; }
+  .linea__elemento { grid-column: 1 / -1; }
+}
