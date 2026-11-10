@@ -45,6 +45,12 @@ export class ConfiguracionController {
     if (p.tipo === 'texto') {
       if (!valor) throw new BadRequestException(`Escriba un valor para "${p.etiqueta}"`);
       if (p.maximo && valor.length > p.maximo) throw new BadRequestException(`"${p.etiqueta}" no puede superar ${p.maximo} caracteres`);
+      if (p.formato === 'url') {
+        valor = valor.replace(/\/+$/, '');
+        if (!/^https?:\/\/[^\s/]+(:\d+)?$/i.test(valor)) {
+          throw new BadRequestException(`"${p.etiqueta}" debe tener la forma http://192.168.1.20:3000 (sin nada después del puerto)`);
+        }
+      }
     } else {
       // Acepta "1.750.905" o "1750905": se guardan solo los dígitos
       if (p.tipo === 'dinero') valor = valor.replace(/[.\s$]/g, '');

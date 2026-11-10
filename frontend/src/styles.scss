@@ -169,6 +169,7 @@ a { color: var(--sgth-petroleo); }
   tr.inactivo td { color: #8a9a9d; }
 
   .acciones { width: 1%; text-align: right; white-space: nowrap; }
+  .num { text-align: right; }
   .secundario { display: block; font-size: 0.8rem; color: var(--sgth-tinta-suave); }
 }
 
@@ -205,3 +206,32 @@ a { color: var(--sgth-petroleo); }
 }
 
 .sgth-cargando { margin: -1px 0 0; }
+
+// --- Diálogos de formulario ----------------------------------------------
+.sgth-dialogo-form {
+  display: grid;
+  gap: 10px 16px;
+  padding-top: 6px;
+
+  mat-form-field { width: 100%; }
+  &--dos { grid-template-columns: 1fr 1fr; }
+  .completo { grid-column: 1 / -1; }
+
+  @media (max-width: 600px) { &--dos { grid-template-columns: 1fr; } }
+}
+
+.sgth-ayuda { margin: 0 0 14px; color: var(--sgth-tinta-suave); font-size: 0.92rem; max-width: 62ch; }
+
+.sgth-error-caja {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--sgth-error);
+  border-radius: 6px;
+  background: #fdecea;
+  color: var(--sgth-error);
+}
+
+.sgth-boton-peligro { --mat-button-filled-container-color: var(--sgth-error); }
+
+// Cantidad grande y legible en tablas de stock
+.sgth-cifra { font-variant-numeric: tabular-nums; font-weight: 600; }

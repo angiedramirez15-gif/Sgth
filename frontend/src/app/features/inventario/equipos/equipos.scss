@@ -1,0 +1,62 @@
+.pestanas { margin-top: -4px; }
+
+::ng-deep .pestanas .mat-mdc-tab-body-content { padding-top: 18px; overflow: visible; }
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.barra__texto { margin: 0; max-width: 64ch; color: var(--sgth-tinta-suave); }
+.barra__texto--suelto { margin-bottom: 12px; }
+.barra__acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.fila { cursor: pointer; }
+
+.marca { width: 44px; padding-right: 0; }
+
+// La placa es el identificador que la gente lee en el sticker: misma forma aquí
+.placa {
+  color: var(--sgth-petroleo);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { text-decoration: underline; }
+}
+
+.serial { font-variant-numeric: tabular-nums; color: var(--sgth-tinta-suave); }
+
+.sgth-estado.asignado { color: var(--sgth-petroleo); }
+
+.num { text-align: right; }
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sgth-petroleo);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.vacio-acciones { display: flex; justify-content: center; margin-top: 14px; }
+
+.lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

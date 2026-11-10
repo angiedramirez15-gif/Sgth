@@ -1,0 +1,187 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Equipos y muebles</h1>
+      <p>
+        {{ conteo().DISPONIBLE }} disponibles, {{ conteo().ASIGNADO }} asignados
+        @if (conteo().EN_REPARACION) { y {{ conteo().EN_REPARACION }} en reparación }
+      </p>
+    </div>
+  </header>
+
+  <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="cambiarPestana($event)" animationDuration="0ms" mat-stretch-tabs="false" mat-align-tabs="start" class="pestanas">
+    <!-- ============ Unidades con placa ============ -->
+    <mat-tab label="Con placa">
+      <div class="barra">
+        <p class="barra__texto">Cada computador, celular, herramienta o mueble con su placa y a quién está asignado.</p>
+        <div class="barra__acciones">
+          @if (seleccionados().length) {
+            <button mat-stroked-button (click)="imprimir()"><mat-icon>qr_code_2</mat-icon>Imprimir {{ seleccionados().length }} sticker{{ seleccionados().length === 1 ? '' : 's' }}</button>
+          }
+          @if (puedeGestionar) {
+            <button mat-flat-button (click)="registrar()"><mat-icon>add</mat-icon>Registrar equipo o mueble</button>
+          }
+        </div>
+      </div>
+
+      <div class="sgth-filtros">
+        <mat-form-field class="busqueda" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-label>Buscar por placa, serial, marca o colaborador</mat-label>
+          <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Clase</mat-label>
+          <mat-select [ngModel]="categoria()" (ngModelChange)="categoria.set($event); tipo.set(0)">
+            <mat-option value="">Equipos y muebles</mat-option>
+            <mat-option value="EQUIPO">Solo equipos</mat-option>
+            <mat-option value="MUEBLE">Solo muebles</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Tipo</mat-label>
+          <mat-select [ngModel]="tipo()" (ngModelChange)="tipo.set($event)">
+            <mat-option [value]="0">Todos</mat-option>
+            @for (t of tiposFiltro(); track t.id) { <mat-option [value]="t.id">{{ t.nombre }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Estado</mat-label>
+          <mat-select [ngModel]="estado()" (ngModelChange)="estado.set($event)">
+            <mat-option value="VIGENTES">Todos menos de baja</mat-option>
+            <mat-option value="DISPONIBLE">Disponibles</mat-option>
+            <mat-option value="ASIGNADO">Asignados</mat-option>
+            <mat-option value="EN_REPARACION">En reparación</mat-option>
+            <mat-option value="DADO_DE_BAJA">Dados de baja</mat-option>
+            <mat-option value="">Todos</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="sgth-marco">
+        @if (cargando()) { <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando equipos y muebles" /> }
+        <table class="sgth-tabla">
+          <thead>
+            <tr>
+              <th scope="col" class="marca">
+                <mat-checkbox [checked]="todosMarcados()" [indeterminate]="algunosMarcados()" (change)="marcarTodos($event.checked)"
+                  [disabled]="!filtrados().length" aria-label="Marcar todos para imprimir stickers" />
+              </th>
+              <th scope="col">Placa</th>
+              <th scope="col">Equipo o mueble</th>
+              <th scope="col">Serial</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Asignado a</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of filtrados(); track a.id) {
+              <tr class="fila" [class.inactivo]="a.estado === 'DADO_DE_BAJA'" (click)="abrir(a)">
+                <td class="marca" (click)="$event.stopPropagation()">
+                  <mat-checkbox [checked]="seleccion().has(a.id)" (change)="marcar(a, $event.checked)" [attr.aria-label]="'Marcar ' + a.placa" />
+                </td>
+                <td><a class="placa" [routerLink]="['/equipos/activos', a.id]" (click)="$event.stopPropagation()">{{ a.placa }}</a></td>
+                <td>
+                  {{ a.elemento }}
+                  @if (a.marca || a.modelo) { <span class="secundario">{{ a.marca }} {{ a.modelo }}</span> }
+                </td>
+                <td class="serial">{{ a.serial || '—' }}</td>
+                <td>
+                  <span class="sgth-estado" [class.sgth-estado--activo]="a.estado === 'DISPONIBLE'" [class.sgth-estado--alerta]="a.estado === 'EN_REPARACION'"
+                    [class.sgth-estado--inactivo]="a.estado === 'DADO_DE_BAJA'" [class.asignado]="a.estado === 'ASIGNADO'">{{ estados[a.estado] }}</span>
+                </td>
+                <td>
+                  @if (a.colaboradorId) {
+                    <a [routerLink]="['/colaboradores', a.colaboradorId]" (click)="$event.stopPropagation()">{{ a.colaborador }}</a>
+                    <span class="secundario">{{ a.colaboradorCargo }}</span>
+                  } @else {
+                    <span class="secundario">En bodega</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!cargando()) {
+                <tr>
+                  <td colspan="6" class="sgth-vacio">
+                    @if (error()) {
+                      No se pudo cargar la lista. <button mat-button (click)="cargar()">Intentar de nuevo</button>
+                    } @else if (!activos().length) {
+                      Aún no hay equipos ni muebles registrados.
+                      @if (puedeGestionar) {
+                        <span class="vacio-acciones"><button mat-flat-button (click)="registrar()">Registrar el primero</button></span>
+                      }
+                    } @else {
+                      Nada coincide con los filtros. <button mat-button (click)="limpiarFiltros()">Quitar filtros</button>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+
+    <!-- ============ Otros elementos por cantidad ============ -->
+    <mat-tab label="Otros elementos">
+      <ng-template matTabContent>
+        <p class="barra__texto barra__texto--suelto">Lo que se entrega por cantidad y sin placa: llaves, carnés, tarjetas de acceso, papelería.</p>
+        <app-stock categoria="OTRO" />
+      </ng-template>
+    </mat-tab>
+
+    <!-- ============ Tipos (catálogo) ============ -->
+    <mat-tab label="Tipos">
+      <div class="barra">
+        <p class="barra__texto">Los tipos agrupan las unidades: "Computador portátil", "Celular", "Silla ergonómica". Cada unidad se registra en la pestaña Con placa.</p>
+        @if (puedeGestionar) {
+          <div class="barra__acciones"><button mat-flat-button (click)="nuevoTipo()"><mat-icon>add</mat-icon>Nuevo tipo</button></div>
+        }
+      </div>
+      <div class="sgth-marco">
+        <table class="sgth-tabla">
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Clase</th>
+              <th scope="col" class="num">Disponibles</th>
+              <th scope="col" class="num">Asignados</th>
+              <th scope="col" class="num">En reparación</th>
+              <th scope="col"><span class="lector">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of tipos(); track t.id) {
+              <tr [class.inactivo]="!t.activo">
+                <td>
+                  <button class="enlace" type="button" (click)="filtrarPorTipo(t)">{{ t.nombre }}</button>
+                  <span class="secundario">{{ t.subcategoria }}@if (!t.activo) { {{ t.subcategoria ? ', ' : '' }}inactivo }</span>
+                </td>
+                <td>{{ t.categoria === 'EQUIPO' ? 'Equipo' : 'Mueble' }}</td>
+                <td class="num sgth-cifra">{{ t.unidades?.disponibles }}</td>
+                <td class="num sgth-cifra">{{ t.unidades?.asignados }}</td>
+                <td class="num sgth-cifra">{{ t.unidades?.enReparacion }}</td>
+                <td class="acciones">
+                  @if (puedeGestionar) {
+                    <button mat-icon-button [matMenuTriggerFor]="menuTipo" [attr.aria-label]="'Opciones de ' + t.nombre"><mat-icon>more_vert</mat-icon></button>
+                    <mat-menu #menuTipo="matMenu" xPosition="before">
+                      <button mat-menu-item (click)="editarTipo(t)"><mat-icon>edit</mat-icon>Editar</button>
+                      <button mat-menu-item (click)="cambiarActivoTipo(t)"><mat-icon>{{ t.activo ? 'block' : 'check_circle' }}</mat-icon>{{ t.activo ? 'Inactivar' : 'Activar' }}</button>
+                    </mat-menu>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!cargando()) {
+                <tr><td colspan="6" class="sgth-vacio">
+                  Aún no hay tipos de equipo ni de mueble.
+                  @if (puedeGestionar) { <span class="vacio-acciones"><button mat-flat-button (click)="nuevoTipo()">Crear el primero</button></span> }
+                </td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

@@ -396,15 +396,23 @@ CREATE TABLE consecutivos_acta (
   PRIMARY KEY (anio)
 ) ENGINE=InnoDB COMMENT='Último número de acta usado por año (ACT-AAAA-NNNN)';
 
+CREATE TABLE consecutivos_placa (
+  prefijo   VARCHAR(10)  NOT NULL COMMENT 'DD-EQ, DD-MU',
+  ultimo    INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (prefijo)
+) ENGINE=InnoDB COMMENT='Último número de placa usado por tipo de activo';
+
 CREATE TABLE actas (
   id                       INT UNSIGNED NOT NULL AUTO_INCREMENT,
   consecutivo              VARCHAR(20)  NOT NULL COMMENT 'ACT-2026-0001',
   tipo_acta                ENUM('ENTREGA','DEVOLUCION') NOT NULL,
+  es_historica             TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '1 = entrega hecha antes del sistema; no descuenta inventario',
   plantilla_id             INT UNSIGNED NOT NULL COMMENT 'Versión exacta de la plantilla usada',
   colaborador_id           INT UNSIGNED NOT NULL COMMENT 'Quien recibe (o devuelve)',
   usuario_id               INT UNSIGNED NOT NULL COMMENT 'Usuario en sesión: firma ENTREGA (RECIBE en devoluciones)',
   colaborador_anterior_id  INT UNSIGNED NULL COMMENT 'Solo en traspasos',
   fecha                    DATE         NOT NULL,
+  fecha_entrega_original   DATE         NULL COMMENT 'Solo actas antiguas: fecha en que realmente se entregó',
   ciudad                   VARCHAR(80)  NOT NULL DEFAULT 'Palmira',
   motivo                   ENUM('INGRESO','DOTACION_PERIODICA','REPOSICION_VIDA_UTIL','DANO','PERDIDA','ASIGNACION','TRASPASO','RETIRO','CAMBIO_CARGO','REPARACION','OTRO') NOT NULL,
   periodo_dotacion_id      INT UNSIGNED NULL COMMENT 'Solo actas de dotación',

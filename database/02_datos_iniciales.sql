@@ -162,7 +162,9 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('dotacion_tope_smmlv', '2', 'Derecho a dotación hasta este número de salarios mínimos (Art. 230 CST)'),
   ('dotacion_meses_minimos', '3', 'Meses de servicio para tener derecho a dotación (Art. 230 CST)'),
   ('sesion_minutos_inactividad', '30', 'Minutos de inactividad antes de cerrar la sesión (RF-02)'),
-  ('login_intentos_maximos', '5', 'Intentos fallidos antes de bloquear el usuario 15 minutos');
+  ('login_intentos_maximos', '5', 'Intentos fallidos antes de bloquear el usuario 15 minutos'),
+  ('url_sistema', 'http://localhost:3000', 'Dirección con la que se abre el sistema en la red; va en el QR de los stickers'),
+  ('prefijo_placa', 'DD', 'Prefijo de las placas de inventario: DD-EQ-0001');
 
 -- 10. Consecutivo de actas
 INSERT INTO consecutivos_acta (anio, ultimo) VALUES (2026, 0);

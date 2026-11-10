@@ -34,7 +34,8 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql` y `005_opcion_no_aplica.sql`). Se pueden repetir sin error.
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql` y `006_inventario_placas_actas_antiguas.sql`).
+Se ejecutan conectado como **root** (sgth_app no puede cambiar tablas) y se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
 El salario mínimo se registra después desde el sistema, en Administración, Configuración.
@@ -94,6 +95,13 @@ Con el usuario `admin`, en el menú **Administración**:
    `admin` genérico si ya tiene su propio usuario administrador.
 5. **Colaboradores**: registre a los colaboradores uno por uno o use **Importar desde Excel**
    (descargue la plantilla después de crear los cargos y áreas, porque sus listas salen de los catálogos).
+6. **Configuración, Dirección del sistema en la red**: escriba la dirección con la que los demás equipos abren
+   el SGTH (por ejemplo `http://192.168.1.20:3000`). Va dentro del QR de los stickers de placa.
+7. **Dotación**: cree los elementos (camisa, jean, botas…) marcando si se entregan por talla, y registre la
+   entrada con lo que hay hoy en bodega.
+8. **Equipos y muebles**: en la pestaña **Tipos** cree los tipos (computador portátil, celular, silla…); en
+   **Con placa** registre cada unidad. El sistema asigna la placa (DD-EQ-0001, DD-MU-0001) y ofrece imprimir
+   el sticker. Lo que se entrega sin placa (llaves, carnés) va en **Otros elementos**.
 
 ## 6. Problemas comunes
 
@@ -106,6 +114,8 @@ Con el usuario `admin`, en el menú **Administración**:
 | El backend no arranca: `JWT_SECRETO ... al menos 32 caracteres` | Complete `JWT_SECRETO` en `.env` (sección 3). |
 | En el login: "No hay conexión con el servidor del SGTH" | El backend no está corriendo: ejecute `npm run start:dev` en `backend/`. |
 | La importación dice que un cargo, área o entidad "no existe en los catálogos del sistema" | Créelo en Administración, Catálogos, o escriba en el Excel el nombre exacto de la lista desplegable. La página muestra arriba el resumen de todo lo que falta. Abreviaturas como "Sura" por "EPS Sura" se reconocen solas. |
+| Los stickers salen corridos al imprimir | En el diálogo de impresión del navegador escoja **Tamaño real** (escala 100 %), no "Ajustar a la página". La hoja es carta de 10 etiquetas de 4 × 2 pulgadas (tipo Avery 5163). |
+| El QR del sticker no abre el sistema desde el celular | Revise en Configuración la **Dirección del sistema en la red**: debe ser la IP del portátil servidor, no `localhost`, y el celular debe estar en la misma red Wi-Fi. |
 | La importación rechaza el número de documento, teléfono o cuenta | Si Excel lo convirtió en notación científica (1,67E+09), formatee esa columna como **Texto** y escríbalo de nuevo. |
 
 ## 7. Estructura

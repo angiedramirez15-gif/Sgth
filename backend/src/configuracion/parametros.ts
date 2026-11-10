@@ -9,11 +9,14 @@ export interface Parametro {
   sufijo?: string;
   editable: boolean;
   ayuda?: string;
+  formato?: 'url';
 }
 
 export const PARAMETROS: Parametro[] = [
   { clave: 'empresa_nombre', etiqueta: 'Nombre de la empresa', grupo: 'Empresa y actas', tipo: 'texto', maximo: 150, editable: true, ayuda: 'Aparece en el texto de las actas' },
   { clave: 'ciudad_actas', etiqueta: 'Ciudad de las actas', grupo: 'Empresa y actas', tipo: 'texto', maximo: 80, editable: true },
+  { clave: 'url_sistema', etiqueta: 'Dirección del sistema en la red', grupo: 'Empresa y actas', tipo: 'texto', maximo: 200, formato: 'url', editable: true, ayuda: 'La que escriben los demás equipos para abrir el SGTH, por ejemplo http://192.168.1.20:3000. Va en el QR de los stickers' },
+  { clave: 'prefijo_placa', etiqueta: 'Prefijo de las placas de inventario', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que las placas ya pegadas no se repitan: DD-EQ-0001, DD-MU-0001' },
   { clave: 'prefijo_acta', etiqueta: 'Prefijo del consecutivo de actas', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que los números de acta no se repitan' },
 
   { clave: 'smmlv_valor', etiqueta: 'Salario mínimo vigente', grupo: 'Dotación', tipo: 'dinero', minimo: 1, maximo: 100_000_000, editable: true, ayuda: 'Valor del decreto del Gobierno para el año indicado abajo. Sin este valor no se calcula el derecho a dotación' },

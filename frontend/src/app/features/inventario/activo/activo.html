@@ -1,0 +1,89 @@
+<div class="sgth-pagina ficha">
+  <a class="volver" routerLink="/equipos"><mat-icon>arrow_back</mat-icon>Equipos y muebles</a>
+
+  @if (cargando() && !activo()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando activo" />
+  } @else if (noExiste()) {
+    <p class="sgth-vacio">No se encontró ese equipo o mueble. <a routerLink="/equipos">Volver a la lista</a></p>
+  } @else if (activo(); as a) {
+    <header class="cabecera">
+      <!-- La placa se muestra igual que en el sticker pegado al equipo -->
+      <div class="placa" aria-hidden="true">
+        <span class="placa__dueno">Placa</span>
+        <span class="placa__codigo">{{ a.placa }}</span>
+      </div>
+      <div class="cabecera__texto">
+        <h1><span class="lector">Placa {{ a.placa }}: </span>{{ a.elemento }}</h1>
+        <p class="cabecera__sub">{{ [a.marca, a.modelo].join(' ').trim() || 'Sin marca ni modelo registrados' }}</p>
+        <p class="cabecera__estado">
+          <span class="sgth-estado" [class.sgth-estado--activo]="a.estado === 'DISPONIBLE'" [class.sgth-estado--alerta]="a.estado === 'EN_REPARACION'"
+            [class.sgth-estado--inactivo]="a.estado === 'DADO_DE_BAJA'" [class.asignado]="a.estado === 'ASIGNADO'">{{ estados[a.estado] }}</span>
+        </p>
+      </div>
+      <div class="cabecera__acciones">
+        <button mat-stroked-button (click)="imprimir()"><mat-icon>qr_code_2</mat-icon>Sticker</button>
+        @if (puedeGestionar) {
+          <button mat-flat-button (click)="editar()"><mat-icon>edit</mat-icon>Editar</button>
+          @if (a.estado !== 'ASIGNADO') {
+            <button mat-icon-button [matMenuTriggerFor]="mas" aria-label="Más opciones"><mat-icon>more_vert</mat-icon></button>
+            <mat-menu #mas="matMenu" xPosition="before">
+              <button mat-menu-item (click)="cambiarEstado()"><mat-icon>swap_horiz</mat-icon>Cambiar estado</button>
+            </mat-menu>
+          }
+        }
+      </div>
+    </header>
+
+    <section class="tenencia" [class.tenencia--asignado]="a.colaboradorId" aria-label="Quién lo tiene">
+      <mat-icon>{{ a.colaboradorId ? 'person' : a.estado === 'EN_REPARACION' ? 'build' : a.estado === 'DADO_DE_BAJA' ? 'delete' : 'inventory_2' }}</mat-icon>
+      @if (a.colaboradorId) {
+        <p>Lo tiene <a [routerLink]="['/colaboradores', a.colaboradorId]">{{ a.colaborador }}</a>, {{ a.colaboradorCargo }}.</p>
+      } @else if (a.estado === 'EN_REPARACION') {
+        <p>Está en reparación. Cuando vuelva, cámbielo a disponible para poder entregarlo.</p>
+      } @else if (a.estado === 'DADO_DE_BAJA') {
+        <p>Fue dado de baja y ya no hace parte del inventario.</p>
+      } @else {
+        <p>Está en bodega, disponible para entregar.</p>
+      }
+    </section>
+
+    <div class="columnas">
+      <section class="bloque" aria-labelledby="t-datos">
+        <h2 id="t-datos">Datos</h2>
+        <dl class="datos">
+          @for (d of datos(); track d.etiqueta) {
+            @if (d.valor) {
+              <div><dt>{{ d.etiqueta }}</dt><dd>{{ d.etiqueta === 'Registrado' ? (d.valor | date: 'd MMM y') : d.valor }}</dd></div>
+            }
+          }
+          @if (a.fechaCompra || a.valorCompra !== null) {
+            <div>
+              <dt>Compra</dt>
+              <dd>
+                {{ a.fechaCompra ? (a.fechaCompra | date: 'd MMM y') : '' }}{{ a.fechaCompra && a.valorCompra !== null ? ', ' : '' }}
+                {{ a.valorCompra !== null ? (a.valorCompra | currency: 'COP' : 'symbol-narrow' : '1.0-0') : '' }}
+              </dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-historial">
+        <h2 id="t-historial">Historial</h2>
+        @if (historial().length) {
+          <ol class="historial">
+            @for (h of historial(); track $index) {
+              <li [class]="'historial__item historial__item--' + h.tipo.toLowerCase()">
+                <span class="historial__fecha">{{ h.fecha.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}</span>
+                <span class="historial__texto">{{ h.descripcion }}</span>
+                <span class="historial__quien">{{ h.usuario }}@if (h.acta) {, acta {{ h.acta }}}</span>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="vacio">Sin movimientos.</p>
+        }
+      </section>
+    </div>
+  }
+</div>

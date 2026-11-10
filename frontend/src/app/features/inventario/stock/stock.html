@@ -1,0 +1,117 @@
+<div class="barra">
+  <p class="resumen">
+    @if (!cargando()) {
+      {{ activos().length }} elemento{{ activos().length === 1 ? '' : 's' }}, {{ unidadesTotales() }} unidades en bodega
+      @if (agotados()) { <span class="sgth-estado sgth-estado--alerta">{{ agotados() }} agotado{{ agotados() === 1 ? '' : 's' }}</span> }
+    }
+  </p>
+  @if (puedeGestionar()) {
+    <div class="barra__acciones">
+      <button mat-stroked-button (click)="nuevo()"><mat-icon>add</mat-icon>Nuevo elemento</button>
+      <button mat-flat-button (click)="entrada()"><mat-icon>move_to_inbox</mat-icon>Registrar entrada</button>
+    </div>
+  }
+</div>
+
+<div class="sgth-filtros">
+  <mat-form-field class="busqueda" subscriptSizing="dynamic">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Buscar elemento</mat-label>
+    <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+  </mat-form-field>
+  @if (inactivos()) {
+    <mat-button-toggle-group [value]="verInactivos()" (change)="verInactivos.set($event.value)" aria-label="Mostrar" hideSingleSelectionIndicator>
+      <mat-button-toggle [value]="false">Activos</mat-button-toggle>
+      <mat-button-toggle [value]="true">Todos ({{ inactivos() }} inactivo{{ inactivos() === 1 ? '' : 's' }})</mat-button-toggle>
+    </mat-button-toggle-group>
+  }
+</div>
+
+<div class="sgth-marco">
+  @if (cargando()) { <mat-progress-bar mode="indeterminate" class="sgth-cargando" aria-label="Cargando inventario" /> }
+  <table class="sgth-tabla">
+    <thead>
+      <tr>
+        <th scope="col">Elemento</th>
+        @if (textos().tallas) { <th scope="col">En bodega por talla</th> }
+        <th scope="col" class="num">Total</th>
+        <th scope="col"><span class="lector">Acciones</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of filtradas(); track e.id) {
+        <tr [class.inactivo]="!e.activo">
+          <td>
+            <span class="nombre">{{ e.nombre }}</span>
+            <span class="secundario">
+              {{ e.subcategoria ? e.subcategoria + ', ' : '' }}se entrega por {{ unidad(e) }}
+              @if (e.vidaUtilDias) { , vida útil {{ e.vidaUtilDias }} días }
+              @if (!e.activo) { , inactivo }
+            </span>
+          </td>
+          @if (textos().tallas) {
+          <td>
+            @if (e.manejaTallas) {
+              @if (e.existencias.length) {
+                <ul class="tallas" [attr.aria-label]="'Stock por talla de ' + e.nombre">
+                  @for (x of e.existencias; track x.talla) {
+                    <li><span class="tallas__talla">{{ x.talla }}</span><span class="sgth-cifra">{{ x.cantidad }}</span></li>
+                  }
+                </ul>
+              } @else {
+                <span class="secundario">Sin stock en ninguna talla</span>
+              }
+            } @else {
+              <span class="secundario">No maneja tallas</span>
+            }
+          </td>
+          }
+          <td class="num">
+            <span class="sgth-cifra total" [class.total--cero]="e.total === 0">{{ e.total }}</span>
+            @if (e.activo && e.total === 0) {
+              <span class="sgth-estado sgth-estado--alerta">Agotado</span>
+            } @else if (e.activo && bajoMinimo(e)) {
+              <span class="sgth-estado sgth-estado--alerta">Bajo el mínimo ({{ e.stockMinimo }})</span>
+            }
+          </td>
+          <td class="acciones">
+            @if (puedeGestionar() && e.activo) {
+              <button mat-button (click)="entrada(e)">Entrada</button>
+            }
+            <button mat-icon-button [matMenuTriggerFor]="menu" [attr.aria-label]="'Más opciones de ' + e.nombre"><mat-icon>more_vert</mat-icon></button>
+            <mat-menu #menu="matMenu" xPosition="before">
+              <button mat-menu-item (click)="movimientos(e)"><mat-icon>history</mat-icon>Ver movimientos</button>
+              @if (puedeGestionar()) {
+                @if (e.activo) {
+                  <button mat-menu-item (click)="ajustar(e)"><mat-icon>exposure</mat-icon>Ajustar stock</button>
+                }
+                <button mat-menu-item (click)="editar(e)"><mat-icon>edit</mat-icon>Editar</button>
+                <button mat-menu-item (click)="cambiarActivo(e)">
+                  <mat-icon>{{ e.activo ? 'block' : 'check_circle' }}</mat-icon>{{ e.activo ? 'Inactivar' : 'Activar' }}
+                </button>
+              }
+            </mat-menu>
+          </td>
+        </tr>
+      } @empty {
+        @if (!cargando()) {
+          <tr>
+            <td [attr.colspan]="textos().tallas ? 4 : 3" class="sgth-vacio">
+              @if (error()) {
+                No se pudo cargar el inventario. <button mat-button (click)="cargar()">Intentar de nuevo</button>
+              } @else if (!filas().length) {
+                Aún no hay elementos de {{ textos().titulo.toLowerCase() }} en el catálogo.
+                <span class="ejemplo">Por ejemplo: {{ textos().ejemplo }}.</span>
+                @if (puedeGestionar()) {
+                  <span class="vacio-acciones"><button mat-flat-button (click)="nuevo()">Agregar el primero</button></span>
+                }
+              } @else {
+                Ningún elemento coincide con la búsqueda. <button mat-button (click)="texto.set('')">Quitar búsqueda</button>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
