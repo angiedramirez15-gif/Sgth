@@ -81,6 +81,13 @@
         </mat-tab>
       }
 
+      @if (puedeVerEpp) {
+        <mat-tab label="EPP">
+          <ng-template matTabContent>
+            <div class="pestana"><app-epp-colaborador [colaboradorId]="f.id" /></div>
+          </ng-template>
+        </mat-tab>
+      }
       @if (puedeVerEntregas) {
         <mat-tab [label]="totalACargo() ? 'Entregas (' + totalACargo() + ' a cargo)' : 'Entregas'">
           <ng-template matTabContent>

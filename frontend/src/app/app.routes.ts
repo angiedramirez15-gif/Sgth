@@ -10,6 +10,7 @@ const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
   'administracion/catalogos': () => import('./features/administracion/catalogos/catalogos').then((c) => c.Catalogos),
   dotacion: () => import('./features/inventario/dotacion/dotacion').then((c) => c.Dotacion),
   actas: () => import('./features/actas/listado/listado-actas').then((c) => c.ListadoActas),
+  epp: () => import('./features/epp/epp').then((c) => c.Epp),
   equipos: () => import('./features/inventario/equipos/equipos').then((c) => c.Equipos),
   'administracion/plantillas': () => import('./features/administracion/plantillas/plantillas').then((c) => c.Plantillas),
   'administracion/configuracion': () => import('./features/administracion/configuracion/configuracion').then((c) => c.Configuracion),
@@ -35,14 +36,22 @@ const inventario: Routes = [
 
 // Entregas, devoluciones y detalle de cada acta
 const actas: Routes = [
-  { path: 'actas/entrega', title: 'Nueva entrega · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+  { path: 'actas/entrega', title: 'Nueva entrega · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar'] },
     loadComponent: () => import('./features/actas/entrega/entrega').then((c) => c.Entrega) },
-  { path: 'actas/antigua', title: 'Registrar acta antigua · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+  { path: 'actas/antigua', title: 'Registrar acta antigua · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar'] },
     loadComponent: () => import('./features/actas/antigua/antigua').then((c) => c.Antigua) },
   { path: 'actas/devolucion', title: 'Registrar devolución · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_activos.gestionar'] },
     loadComponent: () => import('./features/actas/devolucion/devolucion').then((c) => c.Devolucion) },
   { path: 'actas/:id', title: 'Acta · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar'] },
     loadComponent: () => import('./features/actas/detalle/detalle').then((c) => c.DetalleActa) },
+];
+
+// Entregas grupales de EPP
+const epp: Routes = [
+  { path: 'epp/planilla', title: 'Entrega grupal de EPP · SGTH', canActivate: [requierePermiso], data: { titulo: 'EPP', permisos: ['actas_epp.gestionar'] },
+    loadComponent: () => import('./features/epp/planilla-nueva').then((c) => c.PlanillaNueva) },
+  { path: 'epp/planillas/:id', title: 'Planilla de EPP · SGTH', canActivate: [requierePermiso], data: { titulo: 'EPP', permisos: ['inventario_epp.ver', 'inventario_epp.gestionar', 'actas_epp.gestionar'] },
+    loadComponent: () => import('./features/epp/planilla-detalle').then((c) => c.PlanillaDetalle) },
 ];
 
 const modulos: Routes = [...MENU_PRINCIPAL, ...MENU_ADMINISTRACION].map((m) => ({
@@ -80,6 +89,7 @@ export const routes: Routes = [
       ...colaboradores,
       ...inventario,
       ...actas,
+      ...epp,
       ...modulos,
     ],
   },

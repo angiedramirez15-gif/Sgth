@@ -21,3 +21,18 @@ describe('Textos de las actas', () => {
     expect(fechaLarga('2026-11-09')).toBe('9 de noviembre de 2026');
   });
 });
+
+import { fechaCorta, sumarDias } from './textos.js';
+
+describe('Fechas de reposición de EPP', () => {
+  it('suma la vida útil sin correrse por la zona horaria, incluso en años bisiestos', () => {
+    expect(sumarDias('2026-11-10', 30)).toBe('2026-12-10');
+    expect(sumarDias('2027-12-31', 1)).toBe('2028-01-01');
+    expect(sumarDias('2028-02-28', 1)).toBe('2028-02-29');
+    expect(sumarDias('2025-01-10', 180)).toBe('2025-07-09');
+  });
+
+  it('escribe la fecha corta como en la tabla del acta', () => {
+    expect(fechaCorta('2027-11-10')).toBe('10/11/2027');
+  });
+});

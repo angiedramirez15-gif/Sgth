@@ -48,6 +48,19 @@ export interface DatosPdf {
   anulada?: string | null;
 }
 
+export interface DatosPlanilla {
+  consecutivo: string;
+  ciudad: string;
+  fecha: string;
+  empresa: string;
+  motivo: string;
+  clausulas: string[];
+  observaciones: string | null;
+  personas: { nombre: string; documento: string; cargo: string; epp: string[]; reposicion: string }[];
+  entrega: { nombre: string; cargo: string };
+  pie: string[];
+}
+
 /**
  * Arma el PDF del acta con el formato corporativo de DRIM DUIT S.A.S.:
  * logo y línea en el encabezado, dirección en el pie, tabla de elementos y firmas en dos columnas.
@@ -141,6 +154,107 @@ export class PdfActaService {
       this.encabezado(doc, x0, ancho);
       this.pie(doc, d.pie, x0, ancho, i + 1, paginas.count, d.consecutivo);
       if (d.anulada) this.marcaAnulada(doc, d.anulada);
+    }
+    doc.end();
+    return fin;
+  }
+
+  /**
+   * Planilla de entrega grupal de EPP: hoja carta horizontal, compromiso de uso arriba
+   * y una fila por persona con espacio para su firma.
+   */
+  async generarPlanilla(d: DatosPlanilla): Promise<Buffer> {
+    const margenX = 46;
+    const doc = new PDFDocument({
+      size: 'LETTER',
+      layout: 'landscape',
+      margins: { top: 92, bottom: 84, left: margenX, right: margenX },
+      bufferPages: true,
+      info: { Title: `Planilla de entrega de EPP ${d.consecutivo}`, Author: 'SGTH - DRIM DUIT S.A.S.', Subject: d.consecutivo },
+    });
+    const partes: Buffer[] = [];
+    doc.on('data', (p: Buffer) => partes.push(p));
+    const fin = new Promise<Buffer>((ok, error) => {
+      doc.on('end', () => ok(Buffer.concat(partes)));
+      doc.on('error', error);
+    });
+    const ancho = doc.page.width - margenX * 2;
+    const x0 = margenX;
+
+    doc.font('Helvetica').fontSize(10).fillColor(TINTA).text(`${d.ciudad}, ${fechaLarga(d.fecha)}`, x0, 92);
+    doc.font('Helvetica-Bold').fontSize(12).text('PLANILLA DE ENTREGA DE ELEMENTOS DE PROTECCIÓN PERSONAL (EPP)', x0, doc.y + 4, { width: ancho, align: 'center' });
+    doc.font('Helvetica').fontSize(9).text(`No. ${d.consecutivo}`, { width: ancho, align: 'center' });
+    doc.moveDown(0.7);
+    doc.font('Helvetica').fontSize(9.5).text(
+      `Por medio de la presente se deja constancia de la entrega, sin costo, de los Elementos de Protección Personal (EPP) que se relacionan a continuación a los trabajadores de ${d.empresa} que firman esta planilla, por motivo de ${d.motivo}, en cumplimiento del Sistema de Gestión de Seguridad y Salud en el Trabajo.`,
+      x0, doc.y, { width: ancho, align: 'justify', lineGap: 1 },
+    );
+    doc.moveDown(0.5);
+    doc.font('Helvetica-Bold').fontSize(9).text('CADA TRABAJADOR, CON SU FIRMA, MANIFIESTA QUE:', x0, doc.y, { width: ancho });
+    doc.moveDown(0.25);
+    doc.font('Helvetica').fontSize(8);
+    d.clausulas.forEach((c, i) => {
+      doc.text(`${i + 1}. ${c}`, x0, doc.y, { width: ancho, align: 'justify', lineGap: 0.6 });
+      doc.moveDown(0.2);
+    });
+    doc.moveDown(0.5);
+
+    // Tabla: una fila por persona, con la firma al final
+    const columnas = [
+      { titulo: 'N°', ancho: 0.35, centrado: true },
+      { titulo: 'NOMBRE', ancho: 2.1 },
+      { titulo: 'DOCUMENTO', ancho: 1.25, centrado: true },
+      { titulo: 'CARGO', ancho: 1.5 },
+      { titulo: 'EPP ENTREGADOS', ancho: 3.1 },
+      { titulo: 'REPOSICIÓN', ancho: 1.0, centrado: true },
+      { titulo: 'FIRMA', ancho: 2.0 },
+    ];
+    const total = columnas.reduce((s, c) => s + c.ancho, 0);
+    const anchos = columnas.map((c) => (c.ancho / total) * ancho);
+    const pad = 4;
+    const fila = (celdas: string[], encabezado: boolean) => {
+      doc.font(encabezado ? 'Helvetica-Bold' : 'Helvetica').fontSize(encabezado ? 7.8 : 8.2);
+      const alto = Math.max(encabezado ? 16 : 42, ...celdas.map((t, i) => doc.heightOfString(t || ' ', { width: anchos[i] - pad * 2 }) + pad * 2));
+      if (doc.y + alto > doc.page.height - doc.page.margins.bottom) {
+        doc.addPage();
+        doc.y = doc.page.margins.top;
+        if (!encabezado) fila(columnas.map((c) => c.titulo), true);
+      }
+      const y = doc.y;
+      let x = x0;
+      celdas.forEach((t, i) => {
+        if (encabezado) doc.rect(x, y, anchos[i], alto).fill('#E8EFF0');
+        doc.rect(x, y, anchos[i], alto).lineWidth(0.6).strokeColor(TINTA).stroke();
+        const h = doc.heightOfString(t || ' ', { width: anchos[i] - pad * 2 });
+        doc.fillColor(TINTA).text(t, x + pad, y + (alto - h) / 2, { width: anchos[i] - pad * 2, align: columnas[i].centrado || encabezado ? 'center' : 'left' });
+        x += anchos[i];
+      });
+      doc.x = x0;
+      doc.y = y + alto;
+    };
+    fila(columnas.map((c) => c.titulo), true);
+    d.personas.forEach((p, i) => fila([String(i + 1), p.nombre.toUpperCase(), p.documento, p.cargo, p.epp.join('\n'), p.reposicion, ''], false));
+
+    if (d.observaciones) {
+      doc.moveDown(0.5);
+      doc.font('Helvetica-Bold').fontSize(8.5).text('Observaciones: ', x0, doc.y, { continued: true, width: ancho });
+      doc.font('Helvetica').text(d.observaciones, { width: ancho });
+    }
+
+    // Firma de quien entrega
+    doc.moveDown(1);
+    this.asegurarEspacio(doc, 80);
+    const yF = doc.y;
+    doc.font('Helvetica-Bold').fontSize(9.5).fillColor(TINTA).text('ENTREGA:', x0, yF);
+    doc.moveTo(x0, yF + 44).lineTo(x0 + 220, yF + 44).lineWidth(0.7).strokeColor(TINTA).stroke();
+    doc.font('Helvetica-Bold').fontSize(9).text(d.entrega.nombre.toUpperCase(), x0, yF + 49, { width: 260 });
+    doc.font('Helvetica').text(d.entrega.cargo, x0, doc.y, { width: 260 });
+
+    const paginas = doc.bufferedPageRange();
+    for (let i = 0; i < paginas.count; i++) {
+      doc.switchToPage(paginas.start + i);
+      this.encabezado(doc, x0, ancho);
+      this.pie(doc, d.pie, x0, ancho, i + 1, paginas.count, d.consecutivo);
     }
     doc.end();
     return fin;

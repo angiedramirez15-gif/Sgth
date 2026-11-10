@@ -14,14 +14,22 @@ import { mensajeDeError } from '../../../core/autenticacion';
 import { SesionService } from '../../../core/sesion.service';
 import { ColaboradoresService, type FilaColaborador, sinTildes } from '../../colaboradores/colaboradores.service';
 import { type Activo, type Elemento, InventarioService } from '../../inventario/inventario.service';
-import { ActasService, hoy, type OpcionesActas, type PlantillaEntrega, type Tenencia, TIPOS_ENTREGA, tipoTallaDe } from '../actas.service';
+import { ActasService, type EppColaborador, EppService, ESTADOS_EPP, hoy, type OpcionesActas, type PlantillaEntrega, type Tenencia, TIPOS_ENTREGA, tipoTallaDe } from '../actas.service';
 import { SelectorColaborador } from '../selector-colaborador';
 
-interface Linea { elementoId: number | null; talla: string; cantidad: number | null }
+interface Linea { elementoId: number | null; talla: string; cantidad: number | null; fechaReposicion: string }
 
-const CATEGORIA: Record<PlantillaEntrega, 'DOTACION' | 'EQUIPO' | 'MUEBLE' | 'OTRO'> = {
-  DOTACION: 'DOTACION', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO',
+const CATEGORIA: Record<PlantillaEntrega, 'DOTACION' | 'EPP' | 'EQUIPO' | 'MUEBLE' | 'OTRO'> = {
+  DOTACION: 'DOTACION', EPP: 'EPP', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO',
 };
+const lineaVacia = (): Linea => ({ elementoId: null, talla: '', cantidad: 1, fechaReposicion: '' });
+
+/** Suma días a 'YYYY-MM-DD'. */
+function sumarDias(iso: string, dias: number) {
+  const f = new Date(`${iso}T12:00:00Z`);
+  f.setUTCDate(f.getUTCDate() + dias);
+  return f.toISOString().slice(0, 10);
+}
 
 /** Registrar una entrega o un traspaso y generar el acta. */
 @Component({
@@ -35,6 +43,9 @@ const CATEGORIA: Record<PlantillaEntrega, 'DOTACION' | 'EQUIPO' | 'MUEBLE' | 'OT
 })
 export class Entrega implements OnInit {
   private readonly actas = inject(ActasService);
+  private readonly eppApi = inject(EppService);
+  protected readonly estadosEpp = ESTADOS_EPP;
+  protected readonly estadoEpp = signal<EppColaborador | null>(null);
   private readonly inventario = inject(InventarioService);
   private readonly colaboradoresApi = inject(ColaboradoresService);
   private readonly router = inject(Router);
@@ -67,7 +78,7 @@ export class Entrega implements OnInit {
   protected readonly observaciones = signal('');
   protected readonly seleccion = signal<Set<number>>(new Set());
   protected readonly busqueda = signal('');
-  protected readonly lineas = signal<Linea[]>([{ elementoId: null, talla: '', cantidad: 1 }]);
+  protected readonly lineas = signal<Linea[]>([lineaVacia()]);
 
   // --- Derivados ---
   protected readonly porUnidad = computed(() => this.tipo() === 'EQUIPOS' || this.tipo() === 'MUEBLES');
@@ -95,7 +106,8 @@ export class Entrega implements OnInit {
     const talla = e?.manejaTallas ? l.talla : 'UNICA';
     const hay = e ? (e.existencias.find((x) => x.talla === talla)?.cantidad ?? 0) : 0;
     const repetida = !!e && this.lineas().filter((o) => o.elementoId === l.elementoId && (e.manejaTallas ? o.talla === l.talla : true)).length > 1;
-    return { ...l, elemento: e, hay, repetida, sugerida: e ? this.tallaSugerida(e) : null };
+    const reposicionCalculada = e?.vidaUtilDias && this.fecha() ? sumarDias(this.fecha(), e.vidaUtilDias) : '';
+    return { ...l, elemento: e, hay, repetida, sugerida: e ? this.tallaSugerida(e) : null, reposicionCalculada, reposicion: l.fechaReposicion || reposicionCalculada };
   }));
 
   protected readonly dotacionDelPeriodo = computed(() => {
@@ -121,6 +133,7 @@ export class Entrega implements OnInit {
         else if (!l.cantidad || l.cantidad < 1) p.push(`Línea ${i + 1}: escriba la cantidad`);
         else if (l.cantidad > l.hay) p.push(`Línea ${i + 1}: solo hay ${l.hay} en bodega`);
         if (l.repetida) p.push(`Línea ${i + 1}: está repetida`);
+        if (this.tipo() === 'EPP' && l.reposicion && l.reposicion <= this.fecha()) p.push(`Línea ${i + 1}: la reposición debe ser posterior a la entrega`);
       });
     }
     return p;
@@ -174,7 +187,7 @@ export class Entrega implements OnInit {
   async cambiarTipo(t: PlantillaEntrega) {
     this.tipo.set(t);
     this.seleccion.set(new Set());
-    this.lineas.set([{ elementoId: null, talla: '', cantidad: 1 }]);
+    this.lineas.set([lineaVacia()]);
     this.busqueda.set('');
     if (!this.porUnidad()) this.traspaso.set(false);
     this.aplicarTipo();
@@ -183,25 +196,49 @@ export class Entrega implements OnInit {
 
   /** Motivo por defecto según el tipo. */
   private aplicarTipo() {
-    const preferido = this.tipo() === 'DOTACION' ? 'DOTACION_PERIODICA' : 'ASIGNACION';
+    const preferido = this.tipo() === 'DOTACION' ? 'DOTACION_PERIODICA' : this.tipo() === 'EPP' ? 'INGRESO' : 'ASIGNACION';
     this.motivo.set(this.motivos().some((m) => m.valor === preferido) ? preferido : (this.motivos()[0]?.valor ?? ''));
   }
 
   private async cargarElementos() {
     const t = this.tipo();
     if (this.porUnidad() || this.elementosPorTipo()[t]) return;
-    const lista = await this.inventario.elementos(CATEGORIA[t] as 'DOTACION' | 'OTRO');
+    const lista = await this.inventario.elementos(CATEGORIA[t] as 'DOTACION' | 'EPP' | 'OTRO');
     this.elementosPorTipo.update((m) => ({ ...m, [t]: lista }));
   }
 
   private async cargarTenencia(id: number | null) {
     this.tenencia.set(null);
+    this.estadoEpp.set(null);
     if (!id) return;
     try {
-      this.tenencia.set(await this.actas.tenencia(id));
+      const [t, epp] = await Promise.all([
+        this.actas.tenencia(id),
+        this.tipos.some((x) => x.valor === 'EPP') ? this.eppApi.estado(id) : Promise.resolve(null),
+      ]);
+      this.tenencia.set(t);
+      this.estadoEpp.set(epp);
     } catch {
       // Solo es información de apoyo
     }
+  }
+
+  /** EPP del cargo que faltan, están vencidos o por vencer: se agregan como líneas con la talla de la ficha. */
+  protected readonly eppPendientes = computed(() => (this.estadoEpp()?.epp ?? []).filter((e) => e.requerido && e.estado !== 'VIGENTE'));
+
+  agregarPendientes() {
+    const nuevas: Linea[] = [];
+    for (const p of this.eppPendientes()) {
+      const e = this.elementos().find((x) => x.id === p.elementoId);
+      if (!e || this.lineas().some((l) => l.elementoId === e.id)) continue;
+      const sugerida = this.tallaSugerida(e) ?? p.talla ?? '';
+      const talla = e.manejaTallas && e.existencias.some((x) => x.talla === sugerida && x.cantidad > 0) ? sugerida : '';
+      nuevas.push({ elementoId: e.id, talla, cantidad: p.cantidadRequerida || 1, fechaReposicion: '' });
+    }
+    if (!nuevas.length) return;
+    this.lineas.update((ls) => [...ls.filter((l) => l.elementoId), ...nuevas]);
+    if (this.eppPendientes().every((p) => p.estado === 'SIN_ENTREGAR')) this.motivo.set('INGRESO');
+    else if (this.motivos().some((m) => m.valor === 'REPOSICION_VIDA_UTIL')) this.motivo.set('REPOSICION_VIDA_UTIL');
   }
 
   cambiarTraspaso(v: boolean) {
@@ -239,11 +276,11 @@ export class Entrega implements OnInit {
   }
 
   agregarLinea() {
-    this.lineas.update((ls) => [...ls, { elementoId: null, talla: '', cantidad: 1 }]);
+    this.lineas.update((ls) => [...ls, lineaVacia()]);
   }
 
   quitarLinea(i: number) {
-    this.lineas.update((ls) => (ls.length === 1 ? [{ elementoId: null, talla: '', cantidad: 1 }] : ls.filter((_, j) => j !== i)));
+    this.lineas.update((ls) => (ls.length === 1 ? [lineaVacia()] : ls.filter((_, j) => j !== i)));
   }
 
   /** Talla registrada en la ficha del colaborador para ese tipo de prenda. */
@@ -276,7 +313,11 @@ export class Entrega implements OnInit {
         observaciones: this.observaciones().trim() || null,
         lineas: this.porUnidad()
           ? this.elegidos().map((a) => ({ activoId: a.id }))
-          : this.lineasDetalle().filter((l) => l.elemento).map((l) => ({ elementoId: l.elementoId!, talla: l.elemento!.manejaTallas ? l.talla : null, cantidad: Number(l.cantidad) })),
+          : this.lineasDetalle().filter((l) => l.elemento).map((l) => ({
+            elementoId: l.elementoId!, talla: l.elemento!.manejaTallas ? l.talla : null, cantidad: Number(l.cantidad),
+            // Solo se envía si se cambió a mano; si no, el sistema la calcula con la vida útil
+            fechaReposicion: this.tipo() === 'EPP' && l.fechaReposicion && l.fechaReposicion !== l.reposicionCalculada ? l.fechaReposicion : null,
+          })),
       });
       await this.router.navigate(['/actas', acta.id], { queryParams: { nueva: 1 } });
     } catch (e) {

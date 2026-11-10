@@ -75,6 +75,7 @@
           }
           <div><dt>Motivo</dt><dd>{{ a.motivoTexto }}</dd></div>
           @if (a.periodo) { <div><dt>Período</dt><dd>Dotación {{ a.periodo }}</dd></div> }
+          @if (a.planilla) { <div><dt>Planilla</dt><dd><a [routerLink]="['/epp/planillas', a.planillaId]">{{ a.planilla }}</a> (entrega grupal)</dd></div> }
           @if (a.ubicacion) { <div><dt>Ubicación</dt><dd>{{ a.ubicacion }}</dd></div> }
           @if (a.observaciones) { <div><dt>Observaciones</dt><dd>{{ a.observaciones }}</dd></div> }
           <div><dt>Registró</dt><dd>{{ a.registradaPor }}, {{ a.creadoEn.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}</dd></div>
@@ -91,7 +92,7 @@
                 <th scope="col">Descripción</th>
                 @if (porUnidad()) { <th scope="col">Placa</th> }
                 @if (porCantidad()) { <th scope="col">Talla</th> }
-                <th scope="col">Estado</th>
+                @if (a.plantilla === 'EPP') { <th scope="col">Reposición</th> } @else { <th scope="col">Estado</th> }
                 @if (a.tipo === 'DEVOLUCION') { <th scope="col">Observaciones</th> }
               </tr>
             </thead>
@@ -104,7 +105,11 @@
                     <td>@if (l.activoId) { <a class="placa" [routerLink]="['/equipos/activos', l.activoId]">{{ l.placa }}</a> } @else { — }</td>
                   }
                   @if (porCantidad()) { <td>{{ l.talla === 'UNICA' ? '—' : l.talla }}</td> }
-                  <td>{{ l.condicion ? (l.condicion.charAt(0) + l.condicion.slice(1).toLowerCase()) : '—' }}</td>
+                  @if (a.plantilla === 'EPP') {
+                    <td>{{ l.fechaReposicion ? (l.fechaReposicion | date: 'd MMM y') : '—' }}@if (l.repuesto) { <span class="secundario">Ya se repuso</span> }</td>
+                  } @else {
+                    <td>{{ l.condicion ? (l.condicion.charAt(0) + l.condicion.slice(1).toLowerCase()) : '—' }}</td>
+                  }
                   @if (a.tipo === 'DEVOLUCION') { <td>{{ l.observaciones || '—' }}</td> }
                 </tr>
               }

@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type { Categoria, Condicion } from '../inventario/inventario.service';
 
 export type Plantilla = 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS' | 'DEVOLUCION';
-export type PlantillaEntrega = 'DOTACION' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
+export type PlantillaEntrega = 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
 export type EstadoActa = 'PENDIENTE_ACTA' | 'COMPLETA' | 'ANULADA';
 
 export interface FilaActa {
@@ -26,6 +26,8 @@ export interface FilaActa {
 
 export interface LineaActa {
   id: number;
+  fechaReposicion: string | null;
+  repuesto: number;
   elementoId: number;
   elemento: string;
   categoria: Categoria;
@@ -64,6 +66,8 @@ export interface Acta {
   creadoEn: string;
   tieneFirmada: boolean;
   tieneSoporte: boolean;
+  planillaId: number | null;
+  planilla: string | null;
   fechaCargaFirmada: string | null;
   motivoAnulacion: string | null;
   anuladaEn: string | null;
@@ -92,7 +96,7 @@ export interface DatosEntrega {
   ubicacion?: string | null;
   colaboradorAnteriorId?: number | null;
   observaciones?: string | null;
-  lineas: { activoId?: number; elementoId?: number; talla?: string | null; cantidad?: number }[];
+  lineas: { activoId?: number; elementoId?: number; talla?: string | null; cantidad?: number; fechaReposicion?: string | null }[];
 }
 
 export interface DatosDevolucion {
@@ -111,6 +115,7 @@ export const ESTADOS_ACTA: Record<EstadoActa, string> = {
 
 export const TIPOS_ENTREGA: { valor: PlantillaEntrega; etiqueta: string; icono: string; permiso: string; ayuda: string }[] = [
   { valor: 'DOTACION', etiqueta: 'Dotación', icono: 'apparel', permiso: 'actas_dotacion.gestionar', ayuda: 'Uniformes y calzado, por talla' },
+  { valor: 'EPP', etiqueta: 'EPP', icono: 'health_and_safety', permiso: 'actas_epp.gestionar', ayuda: 'Protección personal, con reposición' },
   { valor: 'EQUIPOS', etiqueta: 'Equipos', icono: 'devices', permiso: 'actas_activos.gestionar', ayuda: 'Computadores, celulares, herramientas' },
   { valor: 'MUEBLES', etiqueta: 'Muebles', icono: 'chair', permiso: 'actas_activos.gestionar', ayuda: 'Sillas, escritorios, archivadores' },
   { valor: 'OTROS', etiqueta: 'Otros', icono: 'key', permiso: 'actas_activos.gestionar', ayuda: 'Llaves, carnés, tarjetas' },
@@ -153,4 +158,61 @@ export class ActasService {
 /** Hoy en Colombia como 'YYYY-MM-DD'. */
 export function hoy() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+}
+
+// ---------- EPP ----------
+
+export type EstadoEpp = 'VIGENTE' | 'POR_VENCER' | 'VENCIDO' | 'SIN_ENTREGAR';
+
+export interface EppColaborador {
+  cargo: string;
+  diasAlerta: number;
+  retirado: boolean;
+  epp: {
+    elementoId: number; nombre: string; requerido: boolean; cantidadRequerida: number; manejaTallas: boolean; talla: string | null;
+    cantidad: number; entregado: string | null; reposicion: string | null; dias: number | null; acta: string | null; actaId: number | null; estado: EstadoEpp;
+  }[];
+}
+
+export interface CargoMatriz {
+  id: number; nombre: string; area: string | null; riesgo: number | null; colaboradores: number;
+  items: { elementoId: number; nombre: string; cantidad: number; observacion: string | null; vidaUtilDias: number | null; activo: boolean }[];
+}
+
+export interface Reposiciones {
+  diasAlerta: number;
+  porReponer: { detalleId: number; actaId: number; acta: string; colaboradorId: number; colaborador: string; cargo: string; elementoId: number; epp: string; talla: string; cantidad: number; reposicion: string; dias: number }[];
+  sinEntregar: { colaboradorId: number; colaborador: string; cargo: string; elementoId: number; epp: string; cantidad: number }[];
+}
+
+export interface FilaPlanilla { id: number; consecutivo: string; fecha: string; motivo: string; motivoTexto: string; personas: number; anuladas: number; firmada: boolean; registradaPor: string }
+
+export interface Planilla {
+  id: number; consecutivo: string; fecha: string; motivo: string; motivoTexto: string; observaciones: string | null; registradaPor: string; creadoEn: string;
+  firmada: boolean; fechaCargaFirmada: string | null;
+  personas: { id: number; consecutivo: string; estado: EstadoActa; colaboradorId: number; colaborador: string; documento: string; cargo: string; lineas: { epp: string; talla: string; cantidad: number; unidad: string; reposicion: string }[] }[];
+}
+
+export const ESTADOS_EPP: Record<EstadoEpp, string> = { VIGENTE: 'Vigente', POR_VENCER: 'Por vencer', VENCIDO: 'Vencido', SIN_ENTREGAR: 'Sin entregar' };
+
+@Injectable({ providedIn: 'root' })
+export class EppService {
+  private readonly http = inject(HttpClient);
+
+  matriz = () => firstValueFrom(this.http.get<CargoMatriz[]>('/api/epp/matriz'));
+  guardarMatriz = (cargoId: number, items: { elementoId: number; cantidad: number; observacion: string | null }[]) =>
+    firstValueFrom(this.http.put<{ ok: boolean }>(`/api/epp/matriz/${cargoId}`, { items }));
+  reposiciones = () => firstValueFrom(this.http.get<Reposiciones>('/api/epp/reposiciones'));
+  estado = (colaboradorId: number) => firstValueFrom(this.http.get<EppColaborador>(`/api/colaboradores/${colaboradorId}/epp`));
+  planillas = () => firstValueFrom(this.http.get<FilaPlanilla[]>('/api/epp/planillas'));
+  planilla = (id: number) => firstValueFrom(this.http.get<Planilla>(`/api/epp/planillas/${id}`));
+  crearPlanilla = (d: { fecha: string; motivo: string; observaciones: string | null; personas: { colaboradorId: number; lineas: { elementoId: number; talla: string | null; cantidad: number }[] }[] }) =>
+    firstValueFrom(this.http.post<Planilla>('/api/epp/planillas', d));
+  pdfPlanilla = (id: number) => firstValueFrom(this.http.get(`/api/epp/planillas/${id}/pdf`, { responseType: 'blob' }));
+  firmadaPlanilla = (id: number) => firstValueFrom(this.http.get(`/api/epp/planillas/${id}/firmada`, { responseType: 'blob' }));
+  subirPlanilla = (id: number, archivo: File) => {
+    const f = new FormData();
+    f.append('archivo', archivo);
+    return firstValueFrom(this.http.post<Planilla>(`/api/epp/planillas/${id}/firmada`, f));
+  };
 }

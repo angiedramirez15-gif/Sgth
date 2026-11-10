@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, model, signal } from '@angular/core';
+import { Component, computed, effect, input, model, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,6 +47,7 @@ export class SelectorColaborador {
   readonly valor = model<number | null>(null);
 
   protected readonly texto = signal('');
+  private anterior: number | null = null;
   protected readonly seleccionado = computed(() => this.colaboradores().find((c) => c.id === this.valor()) ?? null);
   protected readonly sugerencias = computed(() => {
     const t = sinTildes(this.texto().trim());
@@ -60,6 +61,9 @@ export class SelectorColaborador {
     effect(() => {
       const c = this.seleccionado();
       if (c) this.texto.set(`${c.nombres} ${c.apellidos}`);
+      // Si desde afuera se limpia el valor (por ejemplo, después de agregar a alguien), se limpia el texto
+      else if (this.anterior !== null) untracked(() => this.texto.set(''));
+      this.anterior = c?.id ?? null;
     });
   }
 
@@ -68,7 +72,10 @@ export class SelectorColaborador {
   escribir(v: string | FilaColaborador) {
     if (typeof v !== 'string') return;
     this.texto.set(v);
-    if (this.valor() !== null) this.valor.set(null);
+    if (this.valor() !== null) {
+      this.anterior = null; // la persona está escribiendo: no borrar lo que escribe
+      this.valor.set(null);
+    }
   }
 
   elegir(c: FilaColaborador) {

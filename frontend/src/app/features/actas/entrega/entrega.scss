@@ -217,3 +217,28 @@
   .linea { grid-template-columns: 1fr 1fr 40px; }
   .linea__elemento { grid-column: 1 / -1; }
 }
+
+// --- EPP ---
+.matriz__cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; h2 { margin: 0; } }
+.matriz__lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.matriz__lista li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+.matriz__nombre { font-weight: 500; }
+.secundario { font-size: 0.82rem; color: var(--sgth-tinta-suave); }
+
+.epp-estado {
+  justify-self: start;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--vigente { background: #e6f6ea; color: var(--sgth-verde-texto); }
+  &--por_vencer { background: var(--sgth-ambar-fondo); color: #6b4100; }
+  &--vencido { background: #fdecea; color: var(--sgth-error); }
+  &--sin_entregar { background: #eef2f3; color: var(--sgth-tinta-suave); }
+}
+
+.linea__reposicion { grid-column: 1 / 2; max-width: 220px; }
+.linea__nota { grid-column: 2 / -1; font-size: 0.8rem; color: var(--sgth-tinta-suave); }
+
+.enlace { padding: 0; border: 0; background: none; color: var(--sgth-petroleo); font: inherit; text-decoration: underline; cursor: pointer; }

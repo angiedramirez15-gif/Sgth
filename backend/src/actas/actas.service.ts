@@ -10,7 +10,7 @@ import { ElementosService } from '../inventario/elementos.service.js';
 import type { ActaAntiguaDto, DevolucionDto, EntregaDto } from './dto/acta.dto.js';
 import { type DatosPdf, type LineaPdf, PdfActaService } from './pdf-acta.service.js';
 import {
-  CATEGORIA_DE_PLANTILLA, CONDICION_TEXTO, fechaLarga, type Motivo, MOTIVOS, MOTIVOS_POR_PLANTILLA, NOMBRE_PLANTILLA,
+  CATEGORIA_DE_PLANTILLA, CONDICION_TEXTO, fechaCorta, fechaLarga, sumarDias, type Motivo, MOTIVOS, MOTIVOS_POR_PLANTILLA, NOMBRE_PLANTILLA,
   PERMISO_ACTA, type Plantilla, rellenar, siglaDocumento, textoPeriodo,
 } from './textos.js';
 
@@ -39,6 +39,7 @@ interface FilaActa {
   ruta_pdf_generado: string | null;
   ruta_acta_firmada: string | null;
   ruta_soporte_original: string | null;
+  planilla_id: number | null;
   fecha_carga_firmada: string | null;
   motivo_anulacion: string | null;
   anulada_en: string | null;
@@ -69,6 +70,8 @@ interface ActivoBloqueado {
 
 export interface LineaActa {
   id: number;
+  fechaReposicion: string | null;
+  repuesto: number;
   elementoId: number;
   elemento: string;
   categoria: Categoria;
@@ -107,6 +110,8 @@ export interface Acta {
   creadoEn: string;
   tieneFirmada: boolean;
   tieneSoporte: boolean;
+  planillaId: number | null;
+  planilla: string | null;
   fechaCargaFirmada: string | null;
   motivoAnulacion: string | null;
   anuladaEn: string | null;
@@ -164,7 +169,7 @@ export class ActasService {
   }
 
   /** Registra la entrega dentro de una transacción abierta y devuelve el id del acta. */
-  async entregaEn(cx: Conexion, dto: EntregaDto, u: UsuarioToken, ip?: string, historica?: { fechaOriginal: string }): Promise<number> {
+  async entregaEn(cx: Conexion, dto: EntregaDto, u: UsuarioToken, ip?: string, historica?: { fechaOriginal: string }, planillaId?: number): Promise<number> {
     const plantilla = dto.plantilla;
     this.exigir(u, plantilla);
     const categoria = CATEGORIA_DE_PLANTILLA[plantilla];
@@ -195,7 +200,9 @@ export class ActasService {
       }
 
       // --- Líneas ---
-      const lineas: { elementoId: number; activoId: number | null; talla: string; cantidad: number; condicion: string | null; nombre: string }[] = [];
+      const lineas: { elementoId: number; activoId: number | null; talla: string; cantidad: number; condicion: string | null; nombre: string; reposicion: string | null }[] = [];
+      // La reposición del EPP se cuenta desde la entrega real (en actas antiguas, la fecha original)
+      const baseReposicion = historica?.fechaOriginal ?? dto.fecha;
       const vistos = new Set<string>();
       for (const [i, l] of dto.lineas.entries()) {
         const n = `Línea ${i + 1}`;
@@ -212,7 +219,7 @@ export class ActasService {
           } else if (a.estado !== 'DISPONIBLE') {
             throw new BadRequestException(`${n}: ${a.placa_inventario} ${await this.porQueNoDisponible(a, cx)}`);
           }
-          lineas.push({ elementoId: a.elemento_id, activoId: a.id, talla: 'UNICA', cantidad: 1, condicion: a.condicion, nombre: a.nombre });
+          lineas.push({ elementoId: a.elemento_id, activoId: a.id, talla: 'UNICA', cantidad: 1, condicion: a.condicion, nombre: a.nombre, reposicion: null });
         } else {
           if (!l.elementoId) throw new BadRequestException(`${n}: seleccione el elemento`);
           if (!l.cantidad) throw new BadRequestException(`${n}: escriba la cantidad`);
@@ -226,23 +233,39 @@ export class ActasService {
           vistos.add(clave);
           // Las actas antiguas no descuentan: el stock que se cargó es el que hay hoy en bodega
           if (!historica) await this.elementos.restar(cx, e, talla, l.cantidad, n);
-          lineas.push({ elementoId: e.id, activoId: null, talla, cantidad: l.cantidad, condicion: 'NUEVO', nombre: e.nombre });
+          let reposicion: string | null = null;
+          if (categoria === 'EPP') {
+            reposicion = l.fechaReposicion ?? (e.vida_util_dias ? sumarDias(baseReposicion, e.vida_util_dias) : null);
+            if (!reposicion) throw new BadRequestException(`${n}: "${e.nombre}" no tiene vida útil; indique la fecha de reposición`);
+            if (reposicion <= baseReposicion) throw new BadRequestException(`${n}: la fecha de reposición debe ser posterior a la entrega`);
+          }
+          lineas.push({ elementoId: e.id, activoId: null, talla, cantidad: l.cantidad, condicion: 'NUEVO', nombre: e.nombre, reposicion });
         }
       }
 
       const usuario = await this.usuario(u.sub, cx);
       const actaId = await this.insertarActa(cx, {
         tipo: 'ENTREGA', plantilla, historica, colaborador, usuarioId: u.sub, anteriorId: anterior?.id ?? null, fecha: dto.fecha,
-        ubicacion: plantilla === 'MUEBLES' ? (dto.ubicacion ?? null) : null, motivo, periodoId, observaciones: dto.observaciones ?? null,
+        ubicacion: plantilla === 'MUEBLES' ? (dto.ubicacion ?? null) : null, motivo, periodoId, observaciones: dto.observaciones ?? null, planillaId: planillaId ?? null,
         entrega: { nombre: usuario.nombre_completo, cargo: usuario.cargo },
         recibe: { nombre: colaborador.nombre, cargo: colaborador.cargo },
       });
 
       for (const l of lineas) {
         await cx.ejecutar(
-          `INSERT INTO actas_detalle (acta_id, elemento_id, activo_id, talla, cantidad, condicion) VALUES (?, ?, ?, ?, ?, ?)`,
-          [actaId, l.elementoId, l.activoId, l.talla, l.cantidad, l.condicion],
+          `INSERT INTO actas_detalle (acta_id, elemento_id, activo_id, talla, cantidad, condicion, fecha_reposicion) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [actaId, l.elementoId, l.activoId, l.talla, l.cantidad, l.condicion, l.reposicion],
         );
+        if (l.reposicion) {
+          // El EPP anterior del mismo tipo queda repuesto: se desecha y deja de alertar
+          await cx.ejecutar(
+            `UPDATE actas_detalle d JOIN actas a ON a.id = d.acta_id
+                SET d.repuesto = 1, d.repuesto_en_acta_id = ?
+              WHERE a.colaborador_id = ? AND d.elemento_id = ? AND d.repuesto = 0 AND d.fecha_reposicion IS NOT NULL
+                AND a.estado <> 'ANULADA' AND d.acta_id <> ?`,
+            [actaId, colaborador.id, l.elementoId, actaId],
+          );
+        }
         if (l.activoId) {
           await cx.ejecutar('UPDATE activos SET estado = ?, colaborador_actual_id = ?, actualizado_por = ? WHERE id = ?', ['ASIGNADO', colaborador.id, u.sub, l.activoId]);
         }
@@ -490,6 +513,8 @@ export class ActasService {
         }
       }
 
+      // Los EPP que esta acta había dejado como repuestos vuelven a estar vigentes
+      await cx.ejecutar('UPDATE actas_detalle SET repuesto = 0, repuesto_en_acta_id = NULL WHERE repuesto_en_acta_id = ?', [id]);
       await cx.ejecutar(
         `UPDATE actas SET estado = 'ANULADA', motivo_anulacion = ?, anulada_por = ?, anulada_en = NOW() WHERE id = ?`,
         [motivo, u.sub, id],
@@ -534,10 +559,11 @@ export class ActasService {
 
   async obtener(id: number, _u: UsuarioToken | null): Promise<Acta> {
     const a = await this.filaActa(id);
-    const extra = await this.db.uno<{ colaborador: string; anterior: string | null; periodo_numero: number | null; periodo_anio: number | null; registrada_por: string }>(
+    const extra = await this.db.uno<{ colaborador: string; anterior: string | null; periodo_numero: number | null; periodo_anio: number | null; registrada_por: string; planilla: string | null }>(
       `SELECT CONCAT(c.nombres, ' ', c.apellidos) AS colaborador, CONCAT(an.nombres, ' ', an.apellidos) AS anterior,
-              pd.numero AS periodo_numero, pd.anio AS periodo_anio, us.nombre_completo AS registrada_por
+              pd.numero AS periodo_numero, pd.anio AS periodo_anio, us.nombre_completo AS registrada_por, pl.consecutivo AS planilla
          FROM actas a
+         LEFT JOIN planillas_epp pl ON pl.id = a.planilla_id
          JOIN colaboradores c ON c.id = a.colaborador_id
          LEFT JOIN colaboradores an ON an.id = a.colaborador_anterior_id
          LEFT JOIN periodos_dotacion pd ON pd.id = a.periodo_dotacion_id
@@ -568,6 +594,8 @@ export class ActasService {
       creadoEn: a.creado_en,
       tieneFirmada: !!a.ruta_acta_firmada,
       tieneSoporte: !!a.ruta_soporte_original,
+      planillaId: a.planilla_id,
+      planilla: extra!.planilla,
       fechaCargaFirmada: a.fecha_carga_firmada,
       motivoAnulacion: a.motivo_anulacion,
       anuladaEn: a.anulada_en,
@@ -724,7 +752,7 @@ export class ActasService {
       placa: l.placa,
       estado: l.condicion ? CONDICION_TEXTO[l.condicion] : null,
       observaciones: l.observaciones,
-      reposicion: null,
+      reposicion: l.fechaReposicion ? fechaCorta(l.fechaReposicion) : null,
     }));
 
     const nota = a.es_historica
@@ -771,7 +799,7 @@ export class ActasService {
   private async insertarActa(cx: Conexion, d: {
     tipo: 'ENTREGA' | 'DEVOLUCION'; plantilla: Plantilla; historica?: { fechaOriginal: string }; colaborador: Colaborador; usuarioId: number;
     anteriorId: number | null; fecha: string; ubicacion: string | null; motivo: Motivo; periodoId: number | null; observaciones: string | null;
-    entrega: { nombre: string; cargo: string }; recibe: { nombre: string; cargo: string };
+    planillaId?: number | null; entrega: { nombre: string; cargo: string }; recibe: { nombre: string; cargo: string };
   }): Promise<number> {
     const plantilla = await cx.uno<{ id: number }>(
       'SELECT id FROM plantillas_acta WHERE plantilla = ? AND vigente = 1 ORDER BY version DESC LIMIT 1',
@@ -782,11 +810,11 @@ export class ActasService {
     const ciudad = await this.config.texto('ciudad_actas', 'Palmira');
     const r = await cx.ejecutar(
       `INSERT INTO actas (consecutivo, tipo_acta, es_historica, plantilla_id, colaborador_id, usuario_id, colaborador_anterior_id, fecha,
-                          fecha_entrega_original, ciudad, ubicacion, motivo, periodo_dotacion_id, firmante_entrega_nombre, firmante_entrega_cargo,
+                          fecha_entrega_original, ciudad, ubicacion, motivo, periodo_dotacion_id, planilla_id, firmante_entrega_nombre, firmante_entrega_cargo,
                           firmante_recibe_nombre, firmante_recibe_cargo, observaciones, estado)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE_ACTA')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE_ACTA')`,
       [consecutivo, d.tipo, d.historica ? 1 : 0, plantilla.id, d.colaborador.id, d.usuarioId, d.anteriorId, d.fecha,
-        d.historica?.fechaOriginal ?? null, ciudad, d.ubicacion, d.motivo, d.periodoId, d.entrega.nombre, d.entrega.cargo,
+        d.historica?.fechaOriginal ?? null, ciudad, d.ubicacion, d.motivo, d.periodoId, d.planillaId ?? null, d.entrega.nombre, d.entrega.cargo,
         d.recibe.nombre, d.recibe.cargo, d.observaciones],
     );
     return r.insertId;
@@ -819,7 +847,8 @@ export class ActasService {
     return cx.consultar(
       `SELECT d.id, d.elemento_id AS elementoId, e.nombre AS elemento, e.categoria_inventario AS categoria, e.unidad,
               d.activo_id AS activoId, ac.placa_inventario AS placa, ac.serial, ac.marca, ac.modelo,
-              ac.descripcion_adicional AS observacionesActivo, d.talla, d.cantidad, d.condicion, d.observaciones
+              ac.descripcion_adicional AS observacionesActivo, d.talla, d.cantidad, d.condicion, d.observaciones,
+              DATE_FORMAT(d.fecha_reposicion, '%Y-%m-%d') AS fechaReposicion, d.repuesto
          FROM actas_detalle d
          JOIN elementos e ON e.id = d.elemento_id
          LEFT JOIN activos ac ON ac.id = d.activo_id

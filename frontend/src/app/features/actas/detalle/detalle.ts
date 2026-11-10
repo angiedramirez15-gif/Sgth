@@ -51,6 +51,7 @@ export class DetalleActa implements OnInit {
     if (!a) return '';
     if (a.tipo === 'DEVOLUCION') return 'Devolución';
     if (a.colaboradorAnterior) return `Traspaso de ${a.plantillaNombre.toLowerCase()}`;
+    if (a.plantilla === 'EPP') return 'Entrega de EPP';
     return `Entrega de ${a.plantillaNombre.toLowerCase()}`;
   });
 

@@ -1,7 +1,7 @@
 import type { Categoria } from '../inventario/categorias.js';
 
 export type Plantilla = 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS' | 'DEVOLUCION';
-export type PlantillaEntrega = Exclude<Plantilla, 'DEVOLUCION' | 'EPP'>;
+export type PlantillaEntrega = Exclude<Plantilla, 'DEVOLUCION'>;
 export type Motivo =
   | 'INGRESO' | 'DOTACION_PERIODICA' | 'REPOSICION_VIDA_UTIL' | 'DANO' | 'PERDIDA' | 'ASIGNACION'
   | 'TRASPASO' | 'RETIRO' | 'CAMBIO_CARGO' | 'REPARACION' | 'OTRO';
@@ -34,6 +34,7 @@ export const MOTIVOS_POR_PLANTILLA: Record<Plantilla, Motivo[]> = {
 /** Categoría del inventario que entrega cada plantilla. */
 export const CATEGORIA_DE_PLANTILLA: Record<PlantillaEntrega, Categoria> = {
   DOTACION: 'DOTACION',
+  EPP: 'EPP',
   EQUIPOS: 'EQUIPO',
   MUEBLES: 'MUEBLE',
   OTROS: 'OTRO',
@@ -160,6 +161,19 @@ export function rellenar(texto: string, c: CamposActa): string {
 /** "1 de 2026", con la fecha límite legal (Art. 232 CST). */
 export function textoPeriodo(numero: number, anio: number): string {
   return `${numero} de ${anio}`;
+}
+
+/** 09/11/2026 */
+export function fechaCorta(iso: string): string {
+  const [a, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${a}`;
+}
+
+/** Suma días a una fecha 'YYYY-MM-DD' sin problemas de zona horaria. */
+export function sumarDias(iso: string, dias: number): string {
+  const f = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
+  f.setUTCDate(f.getUTCDate() + dias);
+  return f.toISOString().slice(0, 10);
 }
 
 /** 9 de noviembre de 2026 */

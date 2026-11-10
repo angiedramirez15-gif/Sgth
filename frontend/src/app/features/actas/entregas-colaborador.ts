@@ -115,7 +115,7 @@ export class EntregasColaborador implements OnInit {
 
   private readonly api = inject(ActasService);
   private readonly sesion = inject(SesionService);
-  protected readonly puedeEntregar = this.sesion.puede('actas_dotacion.gestionar', 'actas_activos.gestionar');
+  protected readonly puedeEntregar = this.sesion.puede('actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar');
   protected readonly puedeDevolver = this.sesion.puede('actas_activos.gestionar');
   protected readonly estados = ESTADOS_ACTA;
   protected readonly nombres = NOMBRES;

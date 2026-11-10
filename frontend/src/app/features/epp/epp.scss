@@ -1,0 +1,139 @@
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+::ng-deep .pestanas .mat-mdc-tab-body-content { padding-top: 18px; overflow: visible; }
+
+.contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &--rojo { background: var(--sgth-error); color: #fff; }
+}
+
+.secundario { display: block; font-size: 0.82rem; color: var(--sgth-tinta-suave); }
+
+// --- Cifras: cada una también filtra la lista ---
+.cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+
+.cifra {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--sgth-linea);
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: var(--sgth-superficie);
+  color: var(--sgth-tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { box-shadow: 0 1px 4px rgb(9 66 77 / 10%); }
+  &:focus-visible { outline: 2px solid var(--sgth-petroleo); outline-offset: 2px; }
+  &--rojo { border-left-color: var(--sgth-error); }
+  &--ambar { border-left-color: var(--sgth-ambar); }
+  &--gris { border-left-color: #8a9a9d; }
+  &--activa { background: var(--sgth-petroleo-suave); border-color: var(--sgth-petroleo); }
+}
+
+.cifra__numero { font-size: 1.9rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.cifra__texto { color: var(--sgth-tinta-suave); font-size: 0.9rem; }
+
+// --- Lista por persona ---
+.personas { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+
+.persona {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr) auto;
+  gap: 12px 20px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+}
+
+.persona__nombre { font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
+
+.persona__items { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.85rem;
+
+  &--vencido { background: #fdecea; color: var(--sgth-error); }
+  &--pronto { background: var(--sgth-ambar-fondo); color: #6b4100; }
+  &--sin { background: #eef2f3; color: var(--sgth-tinta); }
+}
+
+.item__epp { font-weight: 600; }
+.item__detalle { font-size: 0.78rem; opacity: 0.85; }
+
+.todo-bien { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--sgth-verde-texto); }
+
+// --- Matriz ---
+.matriz { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 18px; align-items: start; }
+
+.matriz__cargos { display: grid; gap: 4px; max-height: 70vh; overflow-y: auto; }
+
+.cargo {
+  display: grid;
+  gap: 1px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sgth-tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: var(--sgth-superficie); border-color: var(--sgth-linea); }
+  &--activo { background: var(--sgth-superficie); border-color: var(--sgth-petroleo); box-shadow: inset 3px 0 0 var(--sgth-petroleo); }
+}
+
+.cargo__nombre { font-weight: 600; font-size: 0.92rem; }
+.cargo__dato { font-size: 0.78rem; color: var(--sgth-tinta-suave); }
+
+.matriz__cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; h2 { margin: 0; font-size: 1.1rem; } }
+
+.no-requerido { color: var(--sgth-tinta-suave); }
+
+.cantidad, .observacion {
+  padding: 6px 8px;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+
+  &:focus { outline: 2px solid var(--sgth-petroleo); outline-offset: 0; border-color: transparent; }
+}
+
+.cantidad { width: 64px; text-align: right; }
+.observacion { width: 100%; min-width: 160px; }
+
+.num { text-align: right; }
+
+// --- Planillas ---
+.barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; p { margin: 0; } }
+.fila { cursor: pointer; }
+.numero { color: var(--sgth-petroleo); font-weight: 700; font-variant-numeric: tabular-nums; text-decoration: none; }
+
+@media (max-width: 860px) {
+  .cifras { grid-template-columns: 1fr; }
+  .persona { grid-template-columns: 1fr; }
+  .persona__accion { justify-self: start; }
+  .matriz { grid-template-columns: 1fr; }
+  .matriz__cargos { max-height: none; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}

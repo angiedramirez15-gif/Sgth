@@ -1,0 +1,97 @@
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  text-decoration: none;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.bloque {
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: 180px 240px minmax(0, 1fr);
+  gap: 0 16px;
+
+  mat-form-field { width: 100%; }
+}
+
+.agregar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+
+  mat-form-field { width: 100%; }
+}
+
+.secundario { display: block; font-size: 0.78rem; color: var(--sgth-tinta-suave); font-weight: 400; }
+
+.rejilla-marco { overflow-x: auto; }
+
+.rejilla { min-width: 100%; }
+
+.rejilla__persona { min-width: 200px; }
+
+.numero {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--sgth-petroleo-suave);
+  color: var(--sgth-petroleo-profundo);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.rejilla__epp { min-width: 150px; vertical-align: top; }
+.rejilla__titulo { display: block; margin-bottom: 4px; white-space: normal; }
+.rejilla__controles { display: flex; align-items: center; gap: 4px; font-weight: 400; }
+.rejilla__controles button { --mdc-icon-button-state-layer-size: 30px; width: 30px; height: 30px; padding: 3px; margin-left: auto; }
+
+.rejilla__celda { white-space: nowrap; }
+
+.mini {
+  width: 52px;
+  padding: 4px 6px;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+
+  &:focus { outline: 2px solid var(--sgth-petroleo); border-color: transparent; }
+}
+
+.talla { width: 64px; margin-left: 2px; text-transform: uppercase; }
+.talla--falta { border-color: var(--sgth-error); background: #fff7f6; }
+
+.falta { display: block; margin-top: 4px; }
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 18px;
+
+  .sgth-error-caja { flex-basis: 100%; margin: 0; }
+  button { height: 46px; }
+}
+
+.lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .datos, .agregar { grid-template-columns: 1fr; }
+}

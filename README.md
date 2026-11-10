@@ -34,7 +34,7 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql` y `007_actas_ubicacion_pie.sql`).
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql` y `008_planillas_epp.sql`).
 Se ejecutan conectado como **root** (sgth_app no puede cambiar tablas) y se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
@@ -108,6 +108,10 @@ Con el usuario `admin`, en el menú **Administración**:
     Al guardar se descuenta el inventario y se genera el PDF con el formato de la empresa. Se imprime,
     se firma y se sube escaneado con **Subir firmada**; mientras tanto el acta aparece como "Falta la firmada".
     Traspasos y devoluciones se hacen igual, desde Actas o desde la ficha del equipo.
+11. **EPP** (rol SST): en **EPP › Inventario** cree cada EPP con su vida útil en días y registre la entrada;
+    en **Matriz por cargo** marque qué EPP exige cada cargo. La pestaña **Por reponer** muestra lo vencido,
+    lo que vence pronto y lo que el cargo exige y nunca se entregó. Al entregar un EPP, el anterior del mismo
+    tipo queda como repuesto. **Entrega grupal** genera una sola planilla donde firman todas las personas.
 
 ## 6. Problemas comunes
 
@@ -122,7 +126,7 @@ Con el usuario `admin`, en el menú **Administración**:
 | La importación dice que un cargo, área o entidad "no existe en los catálogos del sistema" | Créelo en Administración, Catálogos, o escriba en el Excel el nombre exacto de la lista desplegable. La página muestra arriba el resumen de todo lo que falta. Abreviaturas como "Sura" por "EPS Sura" se reconocen solas. |
 | El PDF del acta sale con la dirección del pie con símbolos raros (Ã, â€“) | El script se ejecutó con otra codificación. En Configuración, corrija el **Pie de página de las actas** y guarde; los PDF nuevos salen bien. |
 | No deja anular un acta: "tuvo movimientos después de esta acta" | Algún equipo de esa acta ya se traspasó o devolvió después. Anule primero el acta más reciente y luego esta. |
-| Los stickers salen corridos al imprimir | En el diálogo de impresión del navegador escoja **Tamaño real** (escala 100 %), no "Ajustar a la página". La hoja es carta de 10 etiquetas de 4 × 2 pulgadas (tipo Avery 5163). |
+| Los stickers salen corridos al imprimir | En el diálogo de impresión del navegador escoja **Tamaño real** (escala 100 %), no "Ajustar a la página". La hoja es carta de 30 etiquetas de 6,7 × 2,5 cm (tipo Avery 5160). |
 | El QR del sticker no abre el sistema desde el celular | Revise en Configuración la **Dirección del sistema en la red**: debe ser la IP del portátil servidor, no `localhost`, y el celular debe estar en la misma red Wi-Fi. |
 | La importación rechaza el número de documento, teléfono o cuenta | Si Excel lo convirtió en notación científica (1,67E+09), formatee esa columna como **Texto** y escríbalo de nuevo. |
 

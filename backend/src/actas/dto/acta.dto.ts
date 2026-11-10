@@ -29,11 +29,15 @@ export class LineaEntregaDto {
   @Transform(numero) @IsOptional() @opcional @IsInt({ message: 'La cantidad debe ser un número entero' })
   @Min(1, { message: 'La cantidad debe ser mayor que cero' }) @Max(1000, { message: 'Revise la cantidad' })
   cantidad?: number | null;
+
+  /** Solo EPP: si se deja vacía, se calcula con la vida útil. */
+  @Transform(texto) @IsOptional() @opcional @IsDateString({ strict: true }, { message: 'La fecha de reposición no es válida' })
+  fechaReposicion?: string | null;
 }
 
 export class EntregaDto {
-  @IsIn(['DOTACION', 'EQUIPOS', 'MUEBLES', 'OTROS'], { message: 'Seleccione qué se entrega' })
-  plantilla: 'DOTACION' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
+  @IsIn(['DOTACION', 'EPP', 'EQUIPOS', 'MUEBLES', 'OTROS'], { message: 'Seleccione qué se entrega' })
+  plantilla: 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
 
   @Type(() => Number) @IsInt({ message: 'Seleccione el colaborador' })
   colaboradorId: number;
@@ -133,8 +137,8 @@ export class LineaAntiguaDto extends LineaEntregaDto {
 
 /** Entrega hecha antes del sistema, a partir del acta escaneada. */
 export class ActaAntiguaDto {
-  @IsIn(['DOTACION', 'EQUIPOS', 'MUEBLES', 'OTROS'], { message: 'Seleccione qué se entregó' })
-  plantilla: 'DOTACION' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
+  @IsIn(['DOTACION', 'EPP', 'EQUIPOS', 'MUEBLES', 'OTROS'], { message: 'Seleccione qué se entregó' })
+  plantilla: 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS';
 
   @Type(() => Number) @IsInt({ message: 'Seleccione el colaborador' })
   colaboradorId: number;

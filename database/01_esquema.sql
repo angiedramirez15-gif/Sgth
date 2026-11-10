@@ -402,6 +402,30 @@ CREATE TABLE consecutivos_placa (
   PRIMARY KEY (prefijo)
 ) ENGINE=InnoDB COMMENT='Último número de placa usado por tipo de activo';
 
+CREATE TABLE planillas_epp (
+  id                    INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  consecutivo           VARCHAR(20)  NOT NULL COMMENT 'PLA-2026-0001',
+  fecha                 DATE         NOT NULL,
+  motivo                VARCHAR(30)  NOT NULL,
+  usuario_id            INT UNSIGNED NOT NULL COMMENT 'Quien entrega y firma',
+  firmante_nombre       VARCHAR(150) NOT NULL,
+  firmante_cargo        VARCHAR(100) NOT NULL,
+  observaciones         VARCHAR(500) NULL,
+  ruta_pdf_generado     VARCHAR(500) NULL,
+  ruta_planilla_firmada VARCHAR(500) NULL,
+  fecha_carga_firmada   DATETIME     NULL,
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_planilla_consecutivo (consecutivo),
+  CONSTRAINT fk_planilla_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+) ENGINE=InnoDB COMMENT='Entregas grupales de EPP firmadas en una sola hoja';
+
+CREATE TABLE consecutivos_planilla (
+  anio    SMALLINT UNSIGNED NOT NULL,
+  ultimo  INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (anio)
+) ENGINE=InnoDB COMMENT='Último número de planilla de EPP por año (PLA-AAAA-NNNN)';
+
 CREATE TABLE actas (
   id                       INT UNSIGNED NOT NULL AUTO_INCREMENT,
   consecutivo              VARCHAR(20)  NOT NULL COMMENT 'ACT-2026-0001',
@@ -417,6 +441,7 @@ CREATE TABLE actas (
   ubicacion                VARCHAR(150) NULL COMMENT 'Solo actas de muebles: puesto u oficina donde quedan',
   motivo                   ENUM('INGRESO','DOTACION_PERIODICA','REPOSICION_VIDA_UTIL','DANO','PERDIDA','ASIGNACION','TRASPASO','RETIRO','CAMBIO_CARGO','REPARACION','OTRO') NOT NULL,
   periodo_dotacion_id      INT UNSIGNED NULL COMMENT 'Solo actas de dotación',
+  planilla_id              INT UNSIGNED NULL COMMENT 'Entrega grupal de EPP a la que pertenece el acta',
   firmante_entrega_nombre  VARCHAR(150) NOT NULL COMMENT 'Copia al momento de generar el acta',
   firmante_entrega_cargo   VARCHAR(100) NOT NULL,
   firmante_recibe_nombre   VARCHAR(150) NOT NULL,
@@ -441,6 +466,7 @@ CREATE TABLE actas (
   CONSTRAINT fk_actas_usuario   FOREIGN KEY (usuario_id)              REFERENCES usuarios (id),
   CONSTRAINT fk_actas_colab_ant FOREIGN KEY (colaborador_anterior_id) REFERENCES colaboradores (id),
   CONSTRAINT fk_actas_periodo   FOREIGN KEY (periodo_dotacion_id)     REFERENCES periodos_dotacion (id),
+  CONSTRAINT fk_acta_planilla   FOREIGN KEY (planilla_id)             REFERENCES planillas_epp (id),
   CONSTRAINT fk_actas_anulador  FOREIGN KEY (anulada_por)             REFERENCES usuarios (id),
   CONSTRAINT ck_actas_firmada   CHECK (estado <> 'COMPLETA' OR ruta_acta_firmada IS NOT NULL),
   CONSTRAINT ck_actas_anulada   CHECK (estado <> 'ANULADA' OR motivo_anulacion IS NOT NULL)

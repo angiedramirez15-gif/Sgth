@@ -1,0 +1,175 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>EPP</h1>
+      <p>Elementos de protección personal: qué exige cada cargo, qué se ha entregado y qué toca reponer.</p>
+    </div>
+    @if (puedeEntregar) {
+      <div class="acciones">
+        <a mat-stroked-button routerLink="/epp/planilla"><mat-icon>groups</mat-icon>Entrega grupal</a>
+        <a mat-flat-button routerLink="/actas/entrega" [queryParams]="{ tipo: 'EPP' }"><mat-icon>health_and_safety</mat-icon>Entregar EPP</a>
+      </div>
+    }
+  </header>
+
+  <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="cambiarPestana($event)" animationDuration="0ms" mat-stretch-tabs="false" mat-align-tabs="start" class="pestanas">
+    <!-- ============ Por reponer ============ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        Por reponer
+        @if (vencidos().length) { <span class="contador contador--rojo">{{ vencidos().length }}</span> }
+      </ng-template>
+      @if (cargando()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+      } @else if (reposiciones(); as r) {
+        <!-- Tres cifras que dicen dónde está el trabajo -->
+        <div class="cifras">
+          <button type="button" class="cifra cifra--rojo" [class.cifra--activa]="filtro() === 'vencidos'" (click)="filtro.set(filtro() === 'vencidos' ? 'todos' : 'vencidos')">
+            <span class="cifra__numero">{{ vencidos().length }}</span><span class="cifra__texto">vencidos</span>
+          </button>
+          <button type="button" class="cifra cifra--gris" [class.cifra--activa]="filtro() === 'sin'" (click)="filtro.set(filtro() === 'sin' ? 'todos' : 'sin')">
+            <span class="cifra__numero">{{ r.sinEntregar.length }}</span><span class="cifra__texto">exigidos y nunca entregados</span>
+          </button>
+          <button type="button" class="cifra cifra--ambar" [class.cifra--activa]="filtro() === 'pronto'" (click)="filtro.set(filtro() === 'pronto' ? 'todos' : 'pronto')">
+            <span class="cifra__numero">{{ pronto().length }}</span><span class="cifra__texto">vencen en {{ r.diasAlerta }} días o menos</span>
+          </button>
+        </div>
+
+        <div class="sgth-filtros">
+          <mat-form-field class="busqueda" subscriptSizing="dynamic">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>Buscar persona o cargo</mat-label>
+            <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+          </mat-form-field>
+          @if (filtro() !== 'todos') { <button mat-button (click)="filtro.set('todos')">Ver todo</button> }
+        </div>
+
+        @if (porPersona().length) {
+          <ul class="personas">
+            @for (p of porPersona(); track p.colaboradorId) {
+              <li class="persona">
+                <div class="persona__quien">
+                  <a [routerLink]="['/colaboradores', p.colaboradorId]" class="persona__nombre">{{ p.colaborador }}</a>
+                  <span class="secundario">{{ p.cargo }}</span>
+                </div>
+                <ul class="persona__items">
+                  @for (i of p.items; track $index) {
+                    <li [class]="'item item--' + i.tipo">
+                      <span class="item__epp">{{ i.epp }}</span>
+                      <span class="item__detalle">{{ i.detalle }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (puedeEntregar) {
+                  <button mat-stroked-button class="persona__accion" (click)="entregar(p.colaboradorId)">Entregar</button>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="sgth-vacio todo-bien">
+            <mat-icon>verified_user</mat-icon>
+            @if (texto() || filtro() !== 'todos') { Nada coincide con el filtro. } @else { Todos tienen sus EPP al día. }
+          </p>
+        }
+      }
+    </mat-tab>
+
+    <!-- ============ Inventario ============ -->
+    <mat-tab label="Inventario">
+      <ng-template matTabContent>
+        <app-stock categoria="EPP" />
+      </ng-template>
+    </mat-tab>
+
+    <!-- ============ Matriz por cargo ============ -->
+    <mat-tab label="Matriz por cargo">
+      @if (!cargos().length && !cargando()) {
+        <p class="sgth-vacio">No hay cargos. Créelos en <a routerLink="/administracion/catalogos">Administración › Catálogos</a>.</p>
+      } @else {
+        <div class="matriz">
+          <nav class="matriz__cargos" aria-label="Cargos">
+            @for (c of cargos(); track c.id) {
+              <button type="button" class="cargo" [class.cargo--activo]="c.id === cargoId()" (click)="elegirCargo(c)">
+                <span class="cargo__nombre">{{ c.nombre }}</span>
+                <span class="cargo__dato">{{ c.items.length ? c.items.length + ' EPP' : 'Sin EPP' }}, {{ c.colaboradores }} persona{{ c.colaboradores === 1 ? '' : 's' }}</span>
+              </button>
+            }
+          </nav>
+          @if (cargo(); as c) {
+            <section class="matriz__editor" aria-labelledby="t-cargo">
+              <div class="matriz__cabeza">
+                <div>
+                  <h2 id="t-cargo">{{ c.nombre }}</h2>
+                  <span class="secundario">{{ c.area ?? 'Sin área' }}{{ c.riesgo ? ', riesgo ARL ' + c.riesgo : '' }}</span>
+                </div>
+                @if (puedeMatriz) {
+                  <button mat-flat-button (click)="guardarMatriz()" [disabled]="!cambiosMatriz() || guardandoMatriz()">{{ guardandoMatriz() ? 'Guardando…' : 'Guardar matriz' }}</button>
+                }
+              </div>
+              @if (filasMatriz().length) {
+                <div class="sgth-marco">
+                  <table class="sgth-tabla">
+                    <thead>
+                      <tr><th scope="col">EPP</th><th scope="col" class="num">Cantidad</th><th scope="col">Observación</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (f of filasMatriz(); track f.elementoId) {
+                        <tr [class.no-requerido]="!f.requiere">
+                          <td>
+                            <mat-checkbox [checked]="f.requiere" (change)="cambiarFila(f, { requiere: $event.checked })" [disabled]="!puedeMatriz">
+                              {{ f.nombre }}@if (f.subcategoria) { <span class="secundario">{{ f.subcategoria }}</span> }
+                            </mat-checkbox>
+                          </td>
+                          <td class="num">
+                            @if (f.requiere) {
+                              <input class="cantidad" type="number" min="1" max="50" [ngModel]="f.cantidad" (ngModelChange)="cambiarFila(f, { cantidad: $event })" [disabled]="!puedeMatriz" [attr.aria-label]="'Cantidad de ' + f.nombre">
+                            }
+                          </td>
+                          <td>
+                            @if (f.requiere) {
+                              <input class="observacion" maxlength="255" [ngModel]="f.observacion" (ngModelChange)="cambiarFila(f, { observacion: $event })" [disabled]="!puedeMatriz" placeholder="Opcional" [attr.aria-label]="'Observación de ' + f.nombre">
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="sgth-vacio">Aún no hay EPP en el catálogo. Créelos en la pestaña Inventario.</p>
+              }
+            </section>
+          }
+        </div>
+      }
+    </mat-tab>
+
+    <!-- ============ Planillas ============ -->
+    <mat-tab label="Planillas">
+      <div class="barra">
+        <p class="secundario">Entregas grupales: varias personas firman en la misma hoja.</p>
+        @if (puedeEntregar) { <a mat-flat-button routerLink="/epp/planilla"><mat-icon>groups</mat-icon>Nueva entrega grupal</a> }
+      </div>
+      <div class="sgth-marco">
+        <table class="sgth-tabla">
+          <thead>
+            <tr><th scope="col">Planilla</th><th scope="col">Fecha</th><th scope="col" class="num">Personas</th><th scope="col">Estado</th></tr>
+          </thead>
+          <tbody>
+            @for (p of planillas(); track p.id) {
+              <tr class="fila" (click)="router.navigate(['/epp/planillas', p.id])">
+                <td><a class="numero" [routerLink]="['/epp/planillas', p.id]" (click)="$event.stopPropagation()">{{ p.consecutivo }}</a><span class="secundario">{{ p.motivoTexto }}</span></td>
+                <td>{{ p.fecha | date: 'd MMM y' }}</td>
+                <td class="num sgth-cifra">{{ p.personas - p.anuladas }}</td>
+                <td><span class="sgth-estado" [class.sgth-estado--activo]="p.firmada" [class.sgth-estado--alerta]="!p.firmada">{{ p.firmada ? 'Firmada' : 'Falta la firmada' }}</span></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="sgth-vacio">Aún no hay entregas grupales.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

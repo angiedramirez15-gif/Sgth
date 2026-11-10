@@ -13,6 +13,7 @@ import { Avatar } from '../../../shared/avatar';
 import { AvisosService } from '../../../shared/avisos.service';
 import { ColaboradoresService, etiqueta, type FichaColaborador, type OpcionesColaborador } from '../colaboradores.service';
 import { EntregasColaborador } from '../../actas/entregas-colaborador';
+import { EppColaborador } from '../../epp/epp-colaborador';
 import { Expediente } from './expediente';
 import { RetiroDialogo, type DatosRetiro } from './retiro-dialogo';
 
@@ -20,7 +21,7 @@ interface Dato { etiqueta: string; valor: string | number | null | undefined; an
 
 @Component({
   selector: 'app-ficha',
-  imports: [DatePipe, RouterLink, Avatar, Expediente, EntregasColaborador, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
+  imports: [DatePipe, RouterLink, Avatar, Expediente, EntregasColaborador, EppColaborador, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
   templateUrl: './ficha.html',
   styleUrl: './ficha.scss',
   providers: [DatePipe, DecimalPipe],
@@ -46,6 +47,7 @@ export class Ficha implements OnInit {
 
   protected readonly puedeGestionar = this.sesion.puede('colaboradores.gestionar');
   protected readonly puedeVerDocumentos = this.sesion.puede('documentos.ver', 'documentos.ver_sst');
+  protected readonly puedeVerEpp = this.sesion.puede('inventario_epp.ver', 'inventario_epp.gestionar', 'actas_epp.gestionar');
   protected readonly puedeVerEntregas = this.sesion.puede('actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar');
 
   protected readonly nombre = computed(() => {

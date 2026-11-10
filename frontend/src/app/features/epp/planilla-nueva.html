@@ -1,0 +1,107 @@
+<div class="sgth-pagina">
+  <a class="volver" routerLink="/epp" [queryParams]="{ ver: 'planillas' }"><mat-icon>arrow_back</mat-icon>EPP</a>
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Entrega grupal de EPP</h1>
+      <p>Todas las personas firman en la misma planilla. Cada una queda con su propia entrega y su fecha de reposición.</p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+  } @else {
+    <section class="bloque datos">
+      <mat-form-field>
+        <mat-label>Fecha de entrega</mat-label>
+        <input matInput type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" [max]="hoy">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Motivo</mat-label>
+        <mat-select [ngModel]="motivo()" (ngModelChange)="motivo.set($event)">
+          @for (m of motivos; track m.valor) { <mat-option [value]="m.valor">{{ m.etiqueta }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="datos__obs">
+        <mat-label>Observaciones (opcional)</mat-label>
+        <input matInput maxlength="500" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" placeholder="Entrega en obra, frente 2">
+      </mat-form-field>
+    </section>
+
+    <section class="bloque">
+      <div class="agregar">
+        <mat-form-field subscriptSizing="dynamic" class="agregar__epp">
+          <mat-label>Agregar EPP (columna)</mat-label>
+          <mat-select [ngModel]="nuevoEpp()" (ngModelChange)="agregarColumna($event)">
+            @for (e of disponiblesParaColumna(); track e.id) { <mat-option [value]="e.id">{{ e.nombre }} ({{ e.total }} en bodega)</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <app-selector-colaborador class="agregar__persona" [colaboradores]="colaboradores()" [valor]="nuevaPersona()" (valorChange)="agregarPersona($event)" etiqueta="Agregar persona (fila)" />
+        <mat-form-field subscriptSizing="dynamic" class="agregar__cargo">
+          <mat-label>Agregar todo un cargo</mat-label>
+          <mat-select [ngModel]="cargoParaAgregar()" (ngModelChange)="agregarCargo($event)">
+            @for (c of cargos(); track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (columnas().length || personas().length) {
+        <div class="sgth-marco rejilla-marco">
+          <table class="sgth-tabla rejilla">
+            <thead>
+              <tr>
+                <th scope="col" class="rejilla__persona">Persona</th>
+                @for (c of columnas(); track c.elementoId) {
+                  <th scope="col" class="rejilla__epp">
+                    <span class="rejilla__titulo">{{ elemento(c.elementoId)?.nombre }}</span>
+                    <span class="rejilla__controles">
+                      <input type="number" min="1" class="mini" [ngModel]="c.cantidad" (ngModelChange)="cambiarCantidad(c.elementoId, $event)" [attr.aria-label]="'Cantidad por persona de ' + elemento(c.elementoId)?.nombre">
+                      <span class="secundario">{{ elemento(c.elementoId)?.unidad?.toLowerCase() }} c/u</span>
+                      <button mat-icon-button type="button" (click)="quitarColumna(c.elementoId)" [attr.aria-label]="'Quitar ' + elemento(c.elementoId)?.nombre"><mat-icon>close</mat-icon></button>
+                    </span>
+                  </th>
+                }
+                <th scope="col"><span class="lector">Quitar</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of personas(); track p.colaboradorId; let i = $index) {
+                <tr>
+                  <td class="rejilla__persona"><span class="numero">{{ i + 1 }}</span>{{ p.nombre }}<span class="secundario">{{ p.cargo }}</span></td>
+                  @for (c of columnas(); track c.elementoId) {
+                    <td class="rejilla__celda">
+                      <mat-checkbox [checked]="p.celdas[c.elementoId]?.incluir" (change)="cambiarCelda(p, c.elementoId, { incluir: $event.checked })" [attr.aria-label]="elemento(c.elementoId)?.nombre + ' para ' + p.nombre" />
+                      @if (elemento(c.elementoId)?.manejaTallas && p.celdas[c.elementoId]?.incluir) {
+                        <input class="mini talla" [class.talla--falta]="!p.celdas[c.elementoId].talla.trim()" maxlength="10" placeholder="Talla"
+                          [ngModel]="p.celdas[c.elementoId].talla" (ngModelChange)="cambiarCelda(p, c.elementoId, { talla: $event })" [attr.aria-label]="'Talla de ' + elemento(c.elementoId)?.nombre + ' para ' + p.nombre">
+                      }
+                    </td>
+                  }
+                  <td class="acciones"><button mat-icon-button type="button" (click)="quitarPersona(p.colaboradorId)" [attr.aria-label]="'Quitar a ' + p.nombre"><mat-icon>person_remove</mat-icon></button></td>
+                </tr>
+              } @empty {
+                <tr><td [attr.colspan]="columnas().length + 2" class="sgth-vacio">Agregue a las personas que reciben.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="sgth-vacio">Agregue los EPP que se entregan (columnas) y a las personas que los reciben (filas).</p>
+      }
+
+      @if (faltantes().length) {
+        <div class="sgth-error-caja">
+          No alcanza el stock:
+          @for (f of faltantes(); track f.nombre + f.talla) {
+            <span class="falta">{{ f.nombre }}{{ f.talla !== 'UNICA' ? ' talla ' + f.talla : '' }}: se necesitan {{ f.cantidad }}, hay {{ f.hay }}</span>
+          }
+        </div>
+      }
+    </section>
+
+    <div class="pie">
+      @if (error()) { <p class="sgth-error-caja" role="alert">{{ error() }}</p> }
+      <span class="secundario">{{ personas().length }} persona{{ personas().length === 1 ? '' : 's' }}, {{ columnas().length }} EPP</span>
+      <button mat-flat-button (click)="guardar()" [disabled]="guardando()"><mat-icon>groups</mat-icon>{{ guardando() ? 'Guardando…' : 'Registrar y generar planilla' }}</button>
+    </div>
+  }
+</div>

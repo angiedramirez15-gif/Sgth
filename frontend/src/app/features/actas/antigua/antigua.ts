@@ -68,7 +68,7 @@ export class Antigua implements OnInit, OnDestroy {
   protected readonly porUnidad = computed(() => this.tipo() === 'EQUIPOS' || this.tipo() === 'MUEBLES');
   protected readonly motivos = computed(() => (this.opciones()?.motivos[this.tipo()] ?? []).filter((m) => m.valor !== 'TRASPASO'));
   protected readonly elementos = computed(() => {
-    const cat = { DOTACION: 'DOTACION', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO' }[this.tipo()];
+    const cat = { DOTACION: 'DOTACION', EPP: 'EPP', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO' }[this.tipo()];
     return (this.catalogo()[cat] ?? []).filter((e) => e.activo);
   });
 
@@ -91,7 +91,7 @@ export class Antigua implements OnInit, OnDestroy {
   }
 
   private async cargarCatalogo() {
-    const cat = { DOTACION: 'DOTACION', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO' }[this.tipo()] as 'DOTACION' | 'EQUIPO' | 'MUEBLE' | 'OTRO';
+    const cat = { DOTACION: 'DOTACION', EPP: 'EPP', EQUIPOS: 'EQUIPO', MUEBLES: 'MUEBLE', OTROS: 'OTRO' }[this.tipo()] as 'DOTACION' | 'EPP' | 'EQUIPO' | 'MUEBLE' | 'OTRO';
     if (this.catalogo()[cat]) return;
     const lista = await this.inventario.elementos(cat);
     this.catalogo.update((c) => ({ ...c, [cat]: lista }));

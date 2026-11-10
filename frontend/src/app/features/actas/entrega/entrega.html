@@ -86,6 +86,33 @@
           </div>
         </section>
 
+        @if (tipo() === 'EPP' && estadoEpp(); as ep) {
+          <section class="bloque matriz" aria-labelledby="t-matriz">
+            <div class="matriz__cabeza">
+              <h2 id="t-matriz">Lo que exige su cargo ({{ ep.cargo }})</h2>
+              @if (eppPendientes().length) {
+                <button mat-stroked-button type="button" (click)="agregarPendientes()"><mat-icon>playlist_add</mat-icon>Agregar los {{ eppPendientes().length }} pendientes</button>
+              }
+            </div>
+            @if (ep.epp.length) {
+              <ul class="matriz__lista">
+                @for (e of ep.epp; track e.elementoId) {
+                  <li>
+                    <span class="epp-estado" [class]="'epp-estado epp-estado--' + e.estado.toLowerCase()">{{ estadosEpp[e.estado] }}</span>
+                    <span class="matriz__nombre">{{ e.nombre }}@if (!e.requerido) { <span class="secundario"> (no está en la matriz)</span> }</span>
+                    <span class="secundario">
+                      @if (e.reposicion) { {{ e.dias! < 0 ? 'venció hace ' + -e.dias! + ' días' : 'repone el ' + (e.reposicion | date: 'd MMM y') }} }
+                      @else { pide {{ e.cantidadRequerida }} }
+                    </span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="vacio">El cargo no tiene EPP en la matriz. <a routerLink="/epp" [queryParams]="{ ver: 'matriz' }">Configurar la matriz</a></p>
+            }
+          </section>
+        }
+
         <!-- 3. Elementos -->
         <section class="bloque" aria-labelledby="t-elementos">
           <h2 id="t-elementos">{{ porUnidad() ? (tipo() === 'EQUIPOS' ? 'Equipos' : 'Muebles') : 'Elementos' }}</h2>
@@ -149,6 +176,19 @@
                     <input matInput type="number" min="1" [ngModel]="l.cantidad" (ngModelChange)="cambiarLinea(i, { cantidad: $event })" [name]="'ca' + i">
                   </mat-form-field>
                   <button mat-icon-button type="button" (click)="quitarLinea(i)" [attr.aria-label]="'Quitar línea ' + (i + 1)"><mat-icon>close</mat-icon></button>
+                  @if (tipo() === 'EPP' && l.elemento) {
+                    <mat-form-field class="linea__reposicion" subscriptSizing="dynamic">
+                      <mat-label>Reposición</mat-label>
+                      <input matInput type="date" [ngModel]="l.reposicion" (ngModelChange)="cambiarLinea(i, { fechaReposicion: $event })" [name]="'re' + i" [min]="fecha()">
+                    </mat-form-field>
+                    <span class="linea__nota">
+                      @if (l.fechaReposicion && l.fechaReposicion !== l.reposicionCalculada) {
+                        Ajustada a mano. <button class="enlace" type="button" (click)="cambiarLinea(i, { fechaReposicion: '' })">Volver a la calculada</button>
+                      } @else if (l.elemento.vidaUtilDias) {
+                        Vida útil de {{ l.elemento.vidaUtilDias }} días
+                      }
+                    </span>
+                  }
                   @if (l.elemento && (!l.elemento.manejaTallas || l.talla)) {
                     <span class="linea__stock" [class.linea__stock--falta]="(l.cantidad ?? 0) > l.hay">
                       {{ (l.cantidad ?? 0) > l.hay ? 'Solo hay ' + l.hay + ' en bodega' : 'Quedan ' + (l.hay - (l.cantidad ?? 0)) + ' en bodega' }}
@@ -178,7 +218,7 @@
       <aside class="resumen" aria-labelledby="t-resumen">
         <div class="hoja">
           <p class="hoja__numero">El número del acta se asigna al guardar</p>
-          <h2 id="t-resumen" class="hoja__titulo">Acta de entrega de {{ textoTipo().etiqueta.toLowerCase() }}</h2>
+          <h2 id="t-resumen" class="hoja__titulo">Acta de entrega de {{ tipo() === 'EPP' ? 'EPP' : textoTipo().etiqueta.toLowerCase() }}</h2>
           <dl class="hoja__datos">
             <div><dt>Recibe</dt><dd>{{ colaborador() ? colaborador()!.nombres + ' ' + colaborador()!.apellidos : '—' }}</dd></div>
             @if (colaborador()) { <div><dt>Cargo</dt><dd>{{ colaborador()!.cargo }}</dd></div> }
@@ -191,7 +231,7 @@
               @for (a of elegidos(); track a.id) { <li><span>{{ a.elemento }}</span><span class="hoja__ref">{{ a.placa }}</span></li> }
             } @else {
               @for (l of lineasDetalle(); track $index) {
-                @if (l.elemento) { <li><span>{{ l.cantidad }} × {{ l.elemento.nombre }}</span><span class="hoja__ref">{{ l.elemento.manejaTallas ? (l.talla || 'sin talla') : l.elemento.unidad }}</span></li> }
+                @if (l.elemento) { <li><span>{{ l.cantidad }} × {{ l.elemento.nombre }}</span><span class="hoja__ref">{{ tipo() === 'EPP' && l.reposicion ? 'repone ' + (l.reposicion | date: 'd/MM/yy') : l.elemento.manejaTallas ? (l.talla || 'sin talla') : l.elemento.unidad }}</span></li> }
               }
             }
           </ul>
