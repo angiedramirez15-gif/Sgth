@@ -13,6 +13,9 @@
       @for (o of principal(); track o.ruta) {
         <a class="menu__opcion" [routerLink]="o.ruta" routerLinkActive="activa" (click)="alNavegar()">
           <mat-icon>{{ o.icono }}</mat-icon><span>{{ o.titulo }}</span>
+          @if (o.ruta === 'alertas' && totalAlertas()) {
+            <span class="menu__contador" [attr.aria-label]="totalAlertas() + ' alertas activas'">{{ totalAlertas() > 99 ? '99+' : totalAlertas() }}</span>
+          }
         </a>
       }
 

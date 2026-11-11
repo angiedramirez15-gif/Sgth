@@ -1,6 +1,6 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +11,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 import { MENU_ADMINISTRACION, MENU_PRINCIPAL } from '../core/menu';
 import { SesionService } from '../core/sesion.service';
+import { AlertasService } from '../features/alertas/alertas.service';
 
 const NOMBRE_ROL: Record<string, string> = {
   ADMIN: 'Administrador',
@@ -29,6 +30,16 @@ const NOMBRE_ROL: Record<string, string> = {
 export class Estructura {
   private readonly sesion = inject(SesionService);
   private readonly router = inject(Router);
+  private readonly alertas = inject(AlertasService);
+
+  /** Alertas activas que se muestran junto a la opción "Alertas" del menú. */
+  protected readonly totalAlertas = computed(() => this.alertas.resumen()?.total ?? 0);
+
+  constructor() {
+    // Se actualiza al entrar y al cambiar de pantalla (como máximo una vez por minuto)
+    this.alertas.refrescar();
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd), takeUntilDestroyed()).subscribe(() => this.alertas.refrescar());
+  }
 
   protected readonly usuario = this.sesion.usuario;
   protected readonly rol = computed(() => NOMBRE_ROL[this.usuario()?.rol ?? ''] ?? '');

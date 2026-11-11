@@ -1,0 +1,94 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Alertas</h1>
+      <p>Lo que necesita atención. Cada alerta se quita sola cuando se soluciona la causa; también se puede descartar con un motivo.</p>
+    </div>
+    <button mat-stroked-button (click)="actualizar()" [disabled]="actualizando()"><mat-icon>refresh</mat-icon>{{ actualizando() ? 'Revisando…' : 'Revisar ahora' }}</button>
+  </header>
+
+  @for (a of avisosConfig(); track a) {
+    <p class="aviso-config"><mat-icon>tune</mat-icon>{{ a }} <a routerLink="/administracion/configuracion">Ir a Configuración</a></p>
+  }
+
+  <div class="barra">
+    <mat-button-toggle-group [value]="vista()" (change)="cambiarVista($event.value)" aria-label="Qué alertas ver" hideSingleSelectionIndicator>
+      <mat-button-toggle value="ACTIVA">Activas</mat-button-toggle>
+      <mat-button-toggle value="DESCARTADA">Descartadas</mat-button-toggle>
+      <mat-button-toggle value="ATENDIDA">Resueltas</mat-button-toggle>
+    </mat-button-toggle-group>
+    <mat-form-field class="busqueda" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar persona o cargo</mat-label>
+      <input matInput [ngModel]="texto()" (ngModelChange)="texto.set($event)">
+    </mat-form-field>
+  </div>
+
+  @if (conteos().length > 1) {
+    <div class="tipos" role="group" aria-label="Filtrar por tipo">
+      @for (c of conteos(); track c.tipo) {
+        <button type="button" class="tipo" [class.tipo--activo]="tipo() === c.tipo" [attr.aria-pressed]="tipo() === c.tipo" (click)="filtrarTipo(c.tipo)">
+          <mat-icon>{{ tipos[c.tipo].icono }}</mat-icon>{{ tipos[c.tipo].titulo }}<span class="tipo__n">{{ c.total }}</span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando alertas" />
+  } @else if (vista() === 'ACTIVA') {
+    @for (g of grupos(); track g.tipo) {
+      <section class="grupo" [attr.aria-labelledby]="'g-' + g.tipo">
+        <h2 [id]="'g-' + g.tipo"><mat-icon>{{ tipos[g.tipo].icono }}</mat-icon>{{ tipos[g.tipo].titulo }} <span class="grupo__n">{{ g.alertas.length }}</span></h2>
+        <ul class="lista">
+          @for (a of g.alertas; track a.id) {
+            <li class="alerta" [class.alerta--vencida]="a.dias < 0 && a.tipo !== 'ACTA_SIN_FIRMAR' && a.tipo !== 'ELEMENTOS_SIN_DEVOLVER'">
+              <span class="alerta__cuando">
+                @if (a.tipo === 'ACTA_SIN_FIRMAR' || a.tipo === 'ELEMENTOS_SIN_DEVOLVER') { {{ a.fechaEvento | date: 'd MMM' }} }
+                @else { {{ cuando(a) }} }
+              </span>
+              <span class="alerta__texto">
+                @if (a.colaboradorId) { <a class="alerta__quien" [routerLink]="['/colaboradores', a.colaboradorId]">{{ a.colaborador }}</a> }
+                <span class="alerta__mensaje">{{ a.mensaje }}</span>
+                @if (a.cargo) { <span class="secundario">{{ a.cargo }}</span> }
+              </span>
+              <span class="alerta__acciones">
+                <a mat-stroked-button [routerLink]="destino(a).ruta" [queryParams]="destino(a).query ?? {}">{{ tipos[a.tipo].accion }}</a>
+                <button mat-button type="button" (click)="descartar(a)">Descartar</button>
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      <p class="sgth-vacio todo-bien"><mat-icon>task_alt</mat-icon>
+        @if (texto() || tipo()) { Nada coincide con el filtro. } @else { No hay alertas. Todo está al día. }
+      </p>
+    }
+  } @else {
+    <div class="sgth-marco">
+      <table class="sgth-tabla">
+        <thead>
+          <tr><th scope="col">Alerta</th><th scope="col">{{ vista() === 'DESCARTADA' ? 'Descartada' : 'Resuelta' }}</th>@if (vista() === 'DESCARTADA') { <th scope="col">Motivo</th><th scope="col"><span class="lector">Acciones</span></th> }</tr>
+        </thead>
+        <tbody>
+          @for (a of filtradas(); track a.id) {
+            <tr>
+              <td>
+                @if (a.colaboradorId) { <a [routerLink]="['/colaboradores', a.colaboradorId]">{{ a.colaborador }}</a> }
+                <span class="secundario">{{ tipos[a.tipo].titulo }}: {{ a.mensaje }}</span>
+              </td>
+              <td>{{ a.atendidaEn?.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}@if (a.atendidaPor) { <span class="secundario">{{ a.atendidaPor }}</span> }</td>
+              @if (vista() === 'DESCARTADA') {
+                <td>{{ a.motivo }}</td>
+                <td class="acciones"><button mat-button (click)="reactivar(a)">Reactivar</button></td>
+              }
+            </tr>
+          } @empty {
+            <tr><td [attr.colspan]="vista() === 'DESCARTADA' ? 4 : 2" class="sgth-vacio">{{ vista() === 'DESCARTADA' ? 'No hay alertas descartadas en los últimos 90 días.' : 'No hay alertas resueltas en los últimos 90 días.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

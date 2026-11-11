@@ -108,7 +108,7 @@ export interface DatosDevolucion {
 }
 
 export const ESTADOS_ACTA: Record<EstadoActa, string> = {
-  PENDIENTE_ACTA: 'Falta la firmada',
+  PENDIENTE_ACTA: 'Falta firma',
   COMPLETA: 'Firmada',
   ANULADA: 'Anulada',
 };

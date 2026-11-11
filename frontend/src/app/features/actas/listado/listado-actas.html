@@ -6,7 +6,7 @@
         {{ filas().length }} acta{{ filas().length === 1 ? '' : 's' }} de entrega y devolución.
         @if (pendientes()) {
           <button class="pendientes" type="button" (click)="estado.set('PENDIENTE_ACTA')">
-            {{ pendientes() }} sin la firmada cargada
+            {{ pendientes() }} actas sin la firma cargada
           </button>
         }
       </p>
@@ -39,7 +39,7 @@
     </mat-form-field>
     <mat-button-toggle-group [value]="estado()" (change)="estado.set($event.value)" aria-label="Estado" hideSingleSelectionIndicator>
       <mat-button-toggle value="">Todas</mat-button-toggle>
-      <mat-button-toggle value="PENDIENTE_ACTA">Sin firmada</mat-button-toggle>
+      <mat-button-toggle value="PENDIENTE_ACTA">Sin firmar</mat-button-toggle>
       <mat-button-toggle value="COMPLETA">Firmadas</mat-button-toggle>
       <mat-button-toggle value="ANULADA">Anuladas</mat-button-toggle>
     </mat-button-toggle-group>

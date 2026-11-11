@@ -1,0 +1,76 @@
+.reportes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reporte {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--sgth-superficie);
+  border: 1px solid var(--sgth-linea);
+  border-radius: 8px;
+}
+
+.reporte__cabeza {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+
+  h2 { margin: 0 0 4px; font-size: 1.02rem; }
+  p { margin: 0; font-size: 0.875rem; color: var(--sgth-tinta-suave); }
+}
+
+.reporte__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--sgth-petroleo-suave);
+  color: var(--sgth-petroleo);
+}
+
+.reporte__filtros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+
+  mat-form-field { width: 100%; }
+}
+
+.atajos {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -4px;
+
+  button {
+    padding: 3px 10px;
+    border: 1px solid var(--sgth-linea);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--sgth-tinta);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &:hover { border-color: var(--sgth-petroleo); }
+    &:focus-visible { outline: 2px solid var(--sgth-petroleo); outline-offset: 1px; }
+  }
+}
+
+// El botón queda abajo aunque la tarjeta tenga menos filtros
+.reporte__boton { align-self: flex-start; margin-top: auto; }
+
+@media (max-width: 520px) {
+  .reportes { grid-template-columns: 1fr; }
+  .reporte__filtros { grid-template-columns: 1fr; }
+}

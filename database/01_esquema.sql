@@ -534,6 +534,7 @@ CREATE TABLE alertas (
   generada_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atendida_por      INT UNSIGNED NULL,
   atendida_en       DATETIME     NULL,
+  motivo_descarte   VARCHAR(255) NULL COMMENT 'Por qué se descartó a mano',
   PRIMARY KEY (id),
   UNIQUE KEY uq_alerta (tipo, referencia_tabla, referencia_id, fecha_evento) COMMENT 'Evita duplicar la alerta en cada ejecución diaria',
   KEY ix_alertas_estado (estado, rol_destino),

@@ -16,6 +16,38 @@
   }
 </section>
 
+@if (veAlertas && resumen(); as r) {
+  <section class="pendientes" aria-labelledby="titulo-pendientes">
+    <div class="pendientes__cabeza">
+      <h2 id="titulo-pendientes">Pendientes</h2>
+      <a routerLink="/alertas" class="pendientes__todas">Ver todas las alertas</a>
+    </div>
+    @for (aviso of r.avisos; track aviso) {
+      <p class="pendientes__aviso">
+        <mat-icon>settings_alert</mat-icon>
+        <span>{{ aviso }}@if (puedeConfigurar) { <a routerLink="/administracion/configuracion">Ir a Configuración</a>}</span>
+      </p>
+    }
+    @if (pendientes().length) {
+      <ul class="pendientes__lista">
+        @for (p of pendientes(); track p.tipo) {
+          <li>
+            <a [routerLink]="'/alertas'" [queryParams]="{ tipo: p.tipo }" class="pendiente" [class.pendiente--vencida]="p.vencidas > 0">
+              <span class="pendiente__numero">{{ p.total }}</span>
+              <span class="pendiente__texto">
+                <span class="pendiente__titulo"><mat-icon>{{ p.icono }}</mat-icon>{{ p.titulo }}</span>
+                @if (p.vencidas && p.vencidas < p.total) { <span class="pendiente__detalle">{{ p.vencidas }} ya {{ p.vencidas === 1 ? 'vencida' : 'vencidas' }}</span> }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="pendientes__nada"><mat-icon>task_alt</mat-icon>No hay alertas activas. Todo está al día.</p>
+    }
+  </section>
+}
+
 <section aria-labelledby="titulo-modulos">
   <h2 id="titulo-modulos">Sus módulos</h2>
   <p class="nota">Estos son los módulos que su rol puede usar. Se habilitan a medida que avanza la construcción del sistema.</p>

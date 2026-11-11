@@ -35,6 +35,19 @@ nav { padding: 8px 0 24px; }
   color: rgb(255 255 255 / 0.55);
 }
 
+.menu__contador {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 11px;
+  background: var(--sgth-ambar, #b26a00);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
 .menu__opcion {
   position: relative;
   display: flex;

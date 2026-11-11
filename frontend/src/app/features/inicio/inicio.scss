@@ -80,3 +80,80 @@ h2 { margin-bottom: 4px; }
   .modulo { grid-template-columns: auto 1fr; }
   .modulo__estado { grid-column: 2; white-space: normal; }
 }
+
+.pendientes { margin-bottom: 36px; }
+.pendientes__cabeza {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  h2 { margin: 0; }
+}
+.pendientes__todas { font-size: 0.9rem; color: var(--sgth-petroleo); }
+
+.pendientes__aviso {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--sgth-ambar-fondo);
+  color: var(--sgth-tinta);
+  font-size: 0.9rem;
+  mat-icon { color: var(--sgth-ambar); flex: none; }
+  a { margin-left: 6px; color: var(--sgth-petroleo); }
+}
+
+.pendientes__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pendiente {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--sgth-linea);
+  border-left: 4px solid var(--sgth-petroleo);
+  border-radius: 8px;
+  background: var(--sgth-superficie);
+  color: inherit;
+  text-decoration: none;
+
+  &:hover { background: #f8fbfb; }
+  &:focus-visible { outline-offset: 2px; }
+  &--vencida { border-left-color: var(--sgth-ambar); }
+}
+.pendiente__numero {
+  min-width: 2ch;
+  font-size: 1.6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sgth-petroleo);
+  .pendiente--vencida & { color: var(--sgth-ambar); }
+}
+.pendiente__texto { display: flex; flex-direction: column; gap: 2px; }
+.pendiente__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--sgth-tinta-suave); }
+}
+.pendiente__detalle { font-size: 0.82rem; color: var(--sgth-ambar); }
+
+.pendientes__nada {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--sgth-verde-texto);
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}

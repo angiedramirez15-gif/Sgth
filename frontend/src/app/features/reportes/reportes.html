@@ -1,0 +1,95 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Reportes</h1>
+      <p>Cada reporte se descarga en Excel con el nombre de la empresa, la fecha y los filtros usados. Se puede filtrar y ordenar en Excel.</p>
+    </div>
+  </header>
+
+  @if (reportes.length) {
+    <ul class="reportes">
+      @for (r of reportes; track r.clave) {
+        <li class="reporte">
+          <div class="reporte__cabeza">
+            <span class="reporte__icono"><mat-icon>{{ r.icono }}</mat-icon></span>
+            <div>
+              <h2>{{ r.titulo }}</h2>
+              <p>{{ r.descripcion }}</p>
+            </div>
+          </div>
+
+          @if (r.filtros.length) {
+            <div class="reporte__filtros">
+              @if (r.filtros.includes('estadoColaborador')) {
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Incluir</mat-label>
+                  <mat-select [(ngModel)]="valores[r.clave].estado">
+                    <mat-option value="ACTIVO">Solo activos</mat-option>
+                    <mat-option value="RETIRADO">Solo retirados</mat-option>
+                    <mat-option value="">Activos y retirados</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              }
+              @if (r.filtros.includes('rango')) {
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Desde</mat-label>
+                  <input matInput type="date" [(ngModel)]="valores[r.clave].desde">
+                </mat-form-field>
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Hasta</mat-label>
+                  <input matInput type="date" [(ngModel)]="valores[r.clave].hasta">
+                </mat-form-field>
+                <div class="atajos" role="group" aria-label="Rangos rápidos">
+                  <button type="button" (click)="rango(r, 'mes')">Este mes</button>
+                  <button type="button" (click)="rango(r, 'anterior')">Mes anterior</button>
+                  <button type="button" (click)="rango(r, 'anio')">Este año</button>
+                  <button type="button" (click)="rango(r, 'todo')">Todo</button>
+                </div>
+              }
+              @if (r.filtros.includes('cargo')) {
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Cargo</mat-label>
+                  <mat-select [(ngModel)]="valores[r.clave].cargoId">
+                    <mat-option [value]="null">Todos</mat-option>
+                    @for (c of cargos(); track c.id) { <mat-option [value]="c.id">{{ c.nombre }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+              }
+              @if (r.filtros.includes('tipoActa')) {
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Tipo de acta</mat-label>
+                  <mat-select [(ngModel)]="valores[r.clave].plantilla">
+                    <mat-option value="">Todas</mat-option>
+                    <mat-option value="DOTACION">Dotación</mat-option>
+                    <mat-option value="EPP">EPP</mat-option>
+                    <mat-option value="EQUIPOS">Equipos</mat-option>
+                    <mat-option value="MUEBLES">Muebles</mat-option>
+                    <mat-option value="OTROS">Otros elementos</mat-option>
+                    <mat-option value="DEVOLUCION">Devolución</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              }
+              @if (r.filtros.includes('estadoActa')) {
+                <mat-form-field subscriptSizing="dynamic">
+                  <mat-label>Estado</mat-label>
+                  <mat-select [(ngModel)]="valores[r.clave].estadoActa">
+                    <mat-option value="">Todos</mat-option>
+                    <mat-option value="PENDIENTE_ACTA">Falta la firmada</mat-option>
+                    <mat-option value="COMPLETA">Firmadas</mat-option>
+                    <mat-option value="ANULADA">Anuladas</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              }
+            </div>
+          }
+
+          <button mat-flat-button class="reporte__boton" (click)="descargar(r)" [disabled]="descargando() === r.clave">
+            <mat-icon>download</mat-icon>{{ descargando() === r.clave ? 'Generando…' : 'Descargar Excel' }}
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="sgth-vacio">Su rol no tiene reportes disponibles.</p>
+  }
+</div>

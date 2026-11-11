@@ -13,6 +13,8 @@ const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
   epp: () => import('./features/epp/epp').then((c) => c.Epp),
   equipos: () => import('./features/inventario/equipos/equipos').then((c) => c.Equipos),
   'administracion/plantillas': () => import('./features/administracion/plantillas/plantillas').then((c) => c.Plantillas),
+  alertas: () => import('./features/alertas/alertas').then((c) => c.Alertas),
+  reportes: () => import('./features/reportes/reportes').then((c) => c.Reportes),
   'administracion/configuracion': () => import('./features/administracion/configuracion/configuracion').then((c) => c.Configuracion),
 };
 

@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module.js';
 import { CatalogosModule } from './catalogos/catalogos.module.js';
 import { ColaboradoresModule } from './colaboradores/colaboradores.module.js';
 import { ActasModule } from './actas/actas.module.js';
+import { AlertasModule } from './alertas/alertas.module.js';
+import { ReportesModule } from './reportes/reportes.module.js';
 import { InventarioModule } from './inventario/inventario.module.js';
 import { ConfiguracionController } from './configuracion/configuracion.controller.js';
 import { UsuariosModule } from './usuarios/usuarios.module.js';
@@ -34,6 +36,8 @@ if (!servirFrontend.length) {
     ColaboradoresModule,
     InventarioModule,
     ActasModule,
+    AlertasModule,
+    ReportesModule,
     ...servirFrontend,
   ],
   controllers: [SaludController, ConfiguracionController],
