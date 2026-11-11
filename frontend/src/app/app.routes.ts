@@ -1,6 +1,6 @@
 import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
-import { requierePermiso, requiereSesion, requiereSesionParaCambio, soloSinSesion } from './core/autenticacion';
+import { requierePermiso, requiereSesion, requiereSesionParaCambio, requiereSesionParaCompromiso, soloSinSesion } from './core/autenticacion';
 import { MENU_ADMINISTRACION, MENU_PRINCIPAL } from './core/menu';
 
 // Pantallas ya construidas. Las demás opciones del menú muestran una pantalla provisional.
@@ -76,6 +76,12 @@ export const routes: Routes = [
     title: 'Cambiar clave · SGTH',
     canActivate: [requiereSesionParaCambio],
     loadComponent: () => import('./features/cambiar-clave/cambiar-clave').then((c) => c.CambiarClave),
+  },
+  {
+    path: 'compromiso',
+    title: 'Compromiso de confidencialidad · SGTH',
+    canActivate: [requiereSesionParaCompromiso],
+    loadComponent: () => import('./features/compromiso/compromiso').then((c) => c.Compromiso),
   },
   {
     path: '',

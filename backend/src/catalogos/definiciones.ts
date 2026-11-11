@@ -77,6 +77,7 @@ export const CATALOGOS: DefinicionCatalogo[] = [
       { columna: 'dias_alerta', etiqueta: 'Días de alerta', tipo: 'numero', minimo: 1, maximo: 365, ayuda: 'Vacío = valor general de Configuración' },
       { columna: 'visible_sst', etiqueta: 'Visible para SST', tipo: 'booleano' },
       { columna: 'es_sensible', etiqueta: 'Dato sensible', tipo: 'booleano', ayuda: 'Información médica u otra protegida por la Ley 1581' },
+      { columna: 'obligatorio_todos', etiqueta: 'Obligatorio para todos', tipo: 'booleano', ayuda: 'Lo deben tener todos los colaboradores, sin importar el cargo; si falta genera alerta' },
     ],
   },
   {

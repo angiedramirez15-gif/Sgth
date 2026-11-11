@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -32,7 +33,7 @@ function sinTildes(t: string) {
   selector: 'app-usuarios',
   imports: [
     DatePipe, FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatSlideToggleModule, MatMenuModule, MatProgressBarModule, MatTabsModule,
+    MatSlideToggleModule, MatMenuModule, MatTooltipModule, MatProgressBarModule, MatTabsModule,
   ],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.scss',
@@ -121,6 +122,21 @@ export class Usuarios implements OnInit {
       const r = await this.api.restablecerClave(u.id);
       this.reemplazar(r.usuario);
       this.mostrarClave('Clave restablecida', r);
+    } catch (e) {
+      this.avisos.error(e);
+    }
+  }
+
+  async reiniciarVerificacion(u: Usuario) {
+    const ok = await this.avisos.confirmar({
+      titulo: 'Reiniciar doble verificación',
+      mensaje: `Úselo si ${u.nombreCompleto} perdió o cambió el celular. Se cerrarán sus sesiones abiertas y, la próxima vez que ingrese, deberá escanear un código QR nuevo con la app.`,
+      accion: 'Reiniciar',
+    });
+    if (!ok) return;
+    try {
+      this.reemplazar(await this.api.reiniciarVerificacion(u.id));
+      this.avisos.exito('Doble verificación reiniciada');
     } catch (e) {
       this.avisos.error(e);
     }

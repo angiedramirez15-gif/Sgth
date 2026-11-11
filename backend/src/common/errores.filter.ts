@@ -12,7 +12,9 @@ export class ErroresFilter implements ExceptionFilter {
     const res = host.switchToHttp().getResponse<Response>();
 
     if (error instanceof HttpException) {
-      res.status(error.getStatus()).json(error.getResponse());
+      const cuerpo = error.getResponse();
+      // Algunas excepciones (p. ej. el límite de peticiones) responden solo con texto
+      res.status(error.getStatus()).json(typeof cuerpo === 'string' ? { statusCode: error.getStatus(), message: cuerpo } : cuerpo);
       return;
     }
 

@@ -6,7 +6,7 @@ import { DatabaseService } from '../database/database.service.js';
 
 export const TIPOS_ALERTA = [
   'DOCUMENTO_VENCIDO', 'DOCUMENTO_POR_VENCER', 'CONTRATO_POR_VENCER', 'EPP_REPOSICION',
-  'DOTACION_PENDIENTE', 'ACTA_SIN_FIRMAR', 'ELEMENTOS_SIN_DEVOLVER',
+  'DOTACION_PENDIENTE', 'ACTA_SIN_FIRMAR', 'ELEMENTOS_SIN_DEVOLVER', 'AUTORIZACION_DATOS',
 ] as const;
 export type TipoAlerta = (typeof TIPOS_ALERTA)[number];
 type Rol = 'TH' | 'SST' | 'TODOS';
@@ -192,6 +192,21 @@ export class AlertasService implements OnApplicationBootstrap, OnModuleDestroy {
       alertas.push({
         tipo: 'ELEMENTOS_SIN_DEVOLVER', rol: 'TH', colaboradorId: r.id, tabla: 'colaboradores', refId: r.id, fecha: r.retiro,
         mensaje: `Se retiró el ${corta(r.retiro)} y tiene ${total} elemento${total === 1 ? '' : 's'} sin devolver`,
+      });
+    }
+    // Colaboradores activos sin los documentos obligatorios para todos (autorización de tratamiento de datos, Ley 1581)
+    const sinAutorizacion = await this.db.consultar<{ id: number; ingreso: string; documento: string }>(
+      `SELECT c.id, DATE_FORMAT(c.fecha_ingreso, '%Y-%m-%d') AS ingreso, t.nombre AS documento
+         FROM colaboradores c
+         JOIN tipos_documento_expediente t ON t.obligatorio_todos = 1 AND t.activo = 1
+        WHERE c.estado = 'ACTIVO'
+          AND NOT EXISTS (SELECT 1 FROM documentos d WHERE d.colaborador_id = c.id AND d.tipo_documento_id = t.id
+                             AND d.vigente = 1 AND d.activo = 1)`,
+    );
+    for (const f of sinAutorizacion) {
+      alertas.push({
+        tipo: 'AUTORIZACION_DATOS', rol: 'TH', colaboradorId: f.id, tabla: 'colaboradores', refId: f.id, fecha: f.ingreso,
+        mensaje: `Falta cargar: ${f.documento} (ingresó el ${corta(f.ingreso)})`,
       });
     }
     return alertas;

@@ -4,22 +4,26 @@ import { CanActivateFn, Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { SesionService } from './sesion.service';
 
-/** Agrega el token a cada petición y cierra la sesión si el backend la rechaza. */
+/**
+ * La sesión viaja en una cookie que pone el servidor. Aquí se agrega la cabecera X-SGTH,
+ * que otra página no puede enviar (protección contra solicitudes falsificadas), y se
+ * cierra la sesión si el servidor la rechaza.
+ */
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const sesion = inject(SesionService);
   const router = inject(Router);
-  const token = sesion.token();
-  const peticion = token && req.url.startsWith('/api/')
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const peticion = req.url.startsWith('/api/') ? req.clone({ setHeaders: { 'X-SGTH': '1' } }) : req;
 
   return next(peticion).pipe(
     catchError((error: HttpErrorResponse) => {
-      const esLogin = req.url.endsWith('/auth/login');
-      if (error.status === 401 && !esLogin && sesion.autenticado()) {
+      const deIngreso = /\/auth\/(login|verificacion)/.test(req.url);
+      const mensaje: string = error.error?.message ?? '';
+      if (error.status === 401 && !deIngreso && sesion.autenticado()) {
         sesion.salir('expirada');
-      } else if (error.status === 403 && /cambiar su clave/i.test(error.error?.message ?? '')) {
+      } else if (error.status === 403 && /cambiar su clave/i.test(mensaje)) {
         router.navigate(['/cambiar-clave']);
+      } else if (error.status === 403 && /compromiso de confidencialidad/i.test(mensaje)) {
+        router.navigate(['/compromiso']);
       }
       return throwError(() => error);
     }),
@@ -28,6 +32,16 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
 /** Solo deja entrar con sesión iniciada. Si debe cambiar la clave, lo lleva a esa pantalla. */
 export const requiereSesion: CanActivateFn = () => {
+  const sesion = inject(SesionService);
+  const router = inject(Router);
+  if (!sesion.autenticado()) return router.createUrlTree(['/ingresar']);
+  if (sesion.debeCambiarClave()) return router.createUrlTree(['/cambiar-clave']);
+  if (sesion.debeAceptarCompromiso()) return router.createUrlTree(['/compromiso']);
+  return true;
+};
+
+/** Pantalla del compromiso: requiere sesión y, antes, haber cambiado la clave si era obligatorio. */
+export const requiereSesionParaCompromiso: CanActivateFn = () => {
   const sesion = inject(SesionService);
   const router = inject(Router);
   if (!sesion.autenticado()) return router.createUrlTree(['/ingresar']);

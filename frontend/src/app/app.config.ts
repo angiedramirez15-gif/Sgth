@@ -13,6 +13,7 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { tokenInterceptor } from './core/autenticacion';
+import { SesionService } from './core/sesion.service';
 
 registerLocaleData(localeEsCo);
 
@@ -27,5 +28,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined');
     }),
+    // Antes de mostrar la primera pantalla, pregunta al servidor si hay una sesión abierta
+    provideAppInitializer(() => inject(SesionService).iniciar()),
   ],
 };

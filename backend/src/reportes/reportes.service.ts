@@ -269,8 +269,9 @@ export class ReportesService {
          FROM colaboradores c
          JOIN cargos cg ON cg.id = c.cargo_id
          JOIN tipos_documento_identidad td ON td.id = c.tipo_documento_id
-         JOIN documentos_obligatorios_cargo o ON o.cargo_id = c.cargo_id
-         JOIN tipos_documento_expediente t ON t.id = o.tipo_documento_id
+         JOIN tipos_documento_expediente t ON t.activo = 1
+              AND (t.obligatorio_todos = 1
+                   OR EXISTS (SELECT 1 FROM documentos_obligatorios_cargo o WHERE o.cargo_id = c.cargo_id AND o.tipo_documento_id = t.id))
         WHERE c.estado = 'ACTIVO' ${soloSst ? 'AND t.visible_sst = 1' : ''}
           AND NOT EXISTS (SELECT 1 FROM documentos d WHERE d.colaborador_id = c.id AND d.tipo_documento_id = t.id AND d.activo = 1 AND d.vigente = 1)
         ORDER BY colaborador, t.nombre`,

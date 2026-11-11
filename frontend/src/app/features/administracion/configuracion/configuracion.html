@@ -59,6 +59,25 @@
         </div>
       }
 
+      @if (g.nombre === 'Seguridad' && compromiso(); as c) {
+        <div class="compromiso">
+          <div class="parametro__texto">
+            <span class="parametro__etiqueta" id="et-compromiso">Compromiso de confidencialidad</span>
+            <p class="parametro__ayuda">
+              Versión {{ c.version }}{{ c.creadoPor ? ', de ' + c.creadoPor : '' }}. Lo han aceptado {{ c.aceptaron }} de {{ c.usuariosActivos }} usuarios activos.
+              Al guardar cambios se crea una versión nueva y todos deben aceptarla otra vez. Hágalo revisar por el área jurídica.
+            </p>
+          </div>
+          <textarea class="compromiso__texto" [(ngModel)]="textoCompromiso" rows="14" maxlength="8000" aria-labelledby="et-compromiso"></textarea>
+          <div class="compromiso__acciones">
+            <button mat-button type="button" (click)="textoCompromiso = c.texto" [disabled]="textoCompromiso === c.texto">Deshacer cambios</button>
+            <button mat-flat-button type="button" (click)="guardarCompromiso()" [disabled]="textoCompromiso.trim() === c.texto || textoCompromiso.trim().length < 50 || guardandoCompromiso()">
+              {{ guardandoCompromiso() ? 'Guardando…' : 'Publicar versión nueva' }}
+            </button>
+          </div>
+        </div>
+      }
+
       @if (g.nombre === 'Certificados laborales') {
         <div class="parametro">
           <div class="parametro__texto">

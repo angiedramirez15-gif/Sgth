@@ -16,6 +16,8 @@ export interface Usuario {
   activo: boolean;
   debeCambiarClave: boolean;
   bloqueado: boolean;
+  dobleVerificacion: boolean;
+  compromisoAceptado: string | null;
   ultimoAcceso: string | null;
   creadoEn: string;
 }
@@ -93,6 +95,7 @@ export class AdministracionService {
   crearUsuario = (d: DatosUsuario) => firstValueFrom(this.http.post<UsuarioConClave>('/api/usuarios', d));
   editarUsuario = (id: number, d: DatosUsuario) => firstValueFrom(this.http.put<Usuario>(`/api/usuarios/${id}`, d));
   estadoUsuario = (id: number, activo: boolean) => firstValueFrom(this.http.patch<Usuario>(`/api/usuarios/${id}/estado`, { activo }));
+  reiniciarVerificacion = (id: number) => firstValueFrom(this.http.post<Usuario>(`/api/usuarios/${id}/reiniciar-verificacion`, {}));
   restablecerClave = (id: number) => firstValueFrom(this.http.post<UsuarioConClave>(`/api/usuarios/${id}/restablecer-clave`, {}));
 
   catalogos = () => firstValueFrom(this.http.get<DefinicionCatalogo[]>('/api/catalogos'));

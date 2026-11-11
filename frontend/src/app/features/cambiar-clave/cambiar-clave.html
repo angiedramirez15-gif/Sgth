@@ -4,7 +4,11 @@
 
     <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
       <h1>Cambiar clave</h1>
-      @if (obligatorio()) {
+      @if (obligatorio() && motivo() === 'VENCIDA') {
+        <p class="ayuda">
+          Hola, {{ nombre() }}. Su clave cumplió 90 días. Por seguridad, cámbiela antes de continuar.
+        </p>
+      } @else if (obligatorio()) {
         <p class="ayuda">
           Hola, {{ nombre() }}. Por seguridad, antes de usar el sistema debe reemplazar la clave temporal por una clave personal.
         </p>
@@ -17,7 +21,7 @@
       }
 
       <mat-form-field appearance="outline">
-        <mat-label>{{ obligatorio() ? 'Clave temporal' : 'Clave actual' }}</mat-label>
+        <mat-label>{{ obligatorio() && motivo() !== 'VENCIDA' ? 'Clave temporal' : 'Clave actual' }}</mat-label>
         <input matInput type="password" formControlName="claveActual" autocomplete="current-password">
         <mat-error>Escriba la clave {{ obligatorio() ? 'temporal' : 'actual' }}</mat-error>
       </mat-form-field>
@@ -34,6 +38,7 @@
         <mat-error>Repita la clave nueva</mat-error>
       </mat-form-field>
 
+      <p class="nota">Tampoco puede ser una clave muy común ni una de sus últimas 5 claves. Se pedirá cambiarla cada 90 días.</p>
       <ul id="requisitos" class="requisitos" aria-live="polite">
         @for (r of requisitos(); track r.texto) {
           <li [class.cumple]="r.cumple">

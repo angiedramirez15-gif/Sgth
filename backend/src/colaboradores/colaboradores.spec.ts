@@ -11,7 +11,7 @@ import { ColaboradoresService } from './colaboradores.service.js';
 import { ColaboradorDto } from './dto/colaborador.dto.js';
 import { ImportacionService } from './importacion.service.js';
 
-const actor: UsuarioToken = { sub: 1, usuario: 'admin', nombre: 'A', cargo: 'A', rol: 'ADMIN', permisos: ['colaboradores.ver_sensibles'], cambiarClave: false };
+const actor: UsuarioToken = { sub: 1, usuario: 'admin', nombre: 'A', cargo: 'A', rol: 'ADMIN', permisos: ['colaboradores.ver_sensibles'], cambiarClave: false, motivoClave: null, aceptarCompromiso: false, dobleVerificacion: false, v: 0, ini: 0 };
 const PDF = Buffer.from('%PDF-1.7\n%prueba\n');
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 

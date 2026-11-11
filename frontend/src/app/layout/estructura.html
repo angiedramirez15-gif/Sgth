@@ -53,6 +53,9 @@
         <div class="menu-usuario__rol">Rol: {{ rol() }}</div>
         <mat-divider />
         <a mat-menu-item routerLink="/cambiar-clave"><mat-icon>key</mat-icon>Cambiar clave</a>
+        @if (usuario()?.dobleVerificacion) {
+          <button mat-menu-item (click)="respaldos()"><mat-icon>password</mat-icon>Códigos de respaldo</button>
+        }
         <button mat-menu-item (click)="salir()"><mat-icon>logout</mat-icon>Cerrar sesión</button>
       </mat-menu>
     </header>

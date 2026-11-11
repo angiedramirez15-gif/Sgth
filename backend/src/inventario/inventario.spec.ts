@@ -5,7 +5,7 @@ import { ActivosService } from './activos.service.js';
 import { exigirPermiso, normalizarTalla } from './categorias.js';
 import { ordenTalla } from './elementos.service.js';
 
-const usuario = (permisos: string[]): UsuarioToken => ({ sub: 1, usuario: 'x', nombre: 'X', cargo: 'X', rol: 'TH', permisos, cambiarClave: false });
+const usuario = (permisos: string[]): UsuarioToken => ({ sub: 1, usuario: 'x', nombre: 'X', cargo: 'X', rol: 'TH', permisos, cambiarClave: false, motivoClave: null, aceptarCompromiso: false, dobleVerificacion: false, v: 0, ini: 0 });
 
 describe('Reglas de inventario', () => {
   it('normaliza tallas y usa UNICA cuando el elemento no maneja tallas', () => {

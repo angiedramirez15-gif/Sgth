@@ -46,4 +46,11 @@ export class UsuariosController {
   restablecerClave(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken, @Ip() ip: string) {
     return this.usuarios.restablecerClave(id, u, ip);
   }
+
+  /** POST /api/usuarios/:id/reiniciar-verificacion — para quien perdió o cambió el celular */
+  @Post('usuarios/:id/reiniciar-verificacion')
+  @HttpCode(200)
+  reiniciarVerificacion(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken, @Ip() ip: string) {
+    return this.usuarios.reiniciarVerificacion(id, u, ip);
+  }
 }

@@ -4,7 +4,7 @@ import { generarClaveTemporal } from '../common/claves.js';
 import type { UsuarioToken } from '../common/tipos.js';
 import { UsuariosService } from './usuarios.service.js';
 
-const actor: UsuarioToken = { sub: 1, usuario: 'admin', nombre: 'Admin', cargo: 'Admin', rol: 'ADMIN', permisos: [], cambiarClave: false };
+const actor: UsuarioToken = { sub: 1, usuario: 'admin', nombre: 'Admin', cargo: 'Admin', rol: 'ADMIN', permisos: [], cambiarClave: false, motivoClave: null, aceptarCompromiso: false, dobleVerificacion: false, v: 0, ini: 0 };
 
 /** Base de datos simulada: responde según el texto de la consulta. */
 function crearDb(opciones: { usuario?: Record<string, unknown>; otrosAdmins?: number; duplicado?: boolean }) {

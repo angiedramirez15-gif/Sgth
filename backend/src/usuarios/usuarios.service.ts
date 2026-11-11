@@ -19,18 +19,23 @@ export interface FilaUsuarioLista {
   bloqueado: boolean;
   ultimoAcceso: string | null;
   creadoEn: string;
+  dobleVerificacion: boolean;
+  compromisoAceptado: string | null;
 }
 
 const SELECT_USUARIOS = `
   SELECT u.id, u.usuario, u.nombre_completo AS nombreCompleto, u.cargo, u.correo,
          r.codigo AS rol, r.nombre AS rolNombre, u.activo, u.debe_cambiar_clave AS debeCambiarClave,
          (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS bloqueado,
-         u.ultimo_acceso AS ultimoAcceso, u.creado_en AS creadoEn
+         u.ultimo_acceso AS ultimoAcceso, u.creado_en AS creadoEn, u.totp_activo AS dobleVerificacion,
+         (SELECT DATE_FORMAT(MAX(a.aceptado_en), '%Y-%m-%d %H:%i') FROM aceptaciones_legales a
+            JOIN textos_legales t ON t.id = a.texto_id AND t.vigente = 1 AND t.tipo = 'CONFIDENCIALIDAD'
+           WHERE a.usuario_id = u.id) AS compromisoAceptado
     FROM usuarios u
     JOIN roles r ON r.id = u.rol_id`;
 
 function normalizar(f: Record<string, unknown>): FilaUsuarioLista {
-  return { ...f, activo: !!f.activo, debeCambiarClave: !!f.debeCambiarClave, bloqueado: !!f.bloqueado } as FilaUsuarioLista;
+  return { ...f, activo: !!f.activo, debeCambiarClave: !!f.debeCambiarClave, bloqueado: !!f.bloqueado, dobleVerificacion: !!f.dobleVerificacion } as FilaUsuarioLista;
 }
 
 /** Administración de usuarios del sistema (RF-03, RF-05). */
@@ -67,12 +72,12 @@ export class UsuariosService {
 
   async crear(dto: CrearUsuarioDto, actor: UsuarioToken, ip?: string) {
     const rolId = await this.idRol(dto.rol);
-    const claveTemporal = generarClaveTemporal();
-    const hash = await bcrypt.hash(claveTemporal, 10);
+    const claveTemporal = generarClaveTemporal(12);
+    const hash = await bcrypt.hash(claveTemporal, 12);
     try {
       const r = await this.db.ejecutar(
-        `INSERT INTO usuarios (usuario, clave_hash, nombre_completo, cargo, correo, rol_id, debe_cambiar_clave, creado_por)
-         VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+        `INSERT INTO usuarios (usuario, clave_hash, nombre_completo, cargo, correo, rol_id, debe_cambiar_clave, clave_cambiada_en, creado_por)
+         VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), ?)`,
         [dto.usuario, hash, dto.nombreCompleto, dto.cargo, dto.correo ?? null, rolId, actor.sub],
       );
       const usuario = await this.obtener(r.insertId);
@@ -95,8 +100,10 @@ export class UsuariosService {
       }
       const rolId = await this.idRol(dto.rol, cx);
       await cx.ejecutar(
-        'UPDATE usuarios SET nombre_completo = ?, cargo = ?, correo = ?, rol_id = ?, actualizado_por = ? WHERE id = ?',
-        [dto.nombreCompleto, dto.cargo, dto.correo ?? null, rolId, actor.sub, id],
+        // Si cambia el rol, se cierran sus sesiones para que entre con los permisos nuevos
+        `UPDATE usuarios SET nombre_completo = ?, cargo = ?, correo = ?, rol_id = ?, actualizado_por = ?,
+                version_sesion = version_sesion + IF(rol_id <> ?, 1, 0) WHERE id = ?`,
+        [dto.nombreCompleto, dto.cargo, dto.correo ?? null, rolId, actor.sub, rolId, id],
       );
       const despues = await this.obtener(id, cx);
       await this.auditoria.registrar({ usuarioId: actor.sub, accion: 'EDITAR', tabla: 'usuarios', registroId: id, antes, despues, ip }, cx);
@@ -111,7 +118,7 @@ export class UsuariosService {
         if (id === actor.sub) throw new BadRequestException('No puede inactivar su propio usuario');
         if (antes.rol === 'ADMIN') await this.verificarOtroAdministrador(id, cx);
       }
-      await cx.ejecutar('UPDATE usuarios SET activo = ?, actualizado_por = ? WHERE id = ?', [activo ? 1 : 0, actor.sub, id]);
+      await cx.ejecutar('UPDATE usuarios SET activo = ?, actualizado_por = ?, version_sesion = version_sesion + 1 WHERE id = ?', [activo ? 1 : 0, actor.sub, id]);
       const despues = await this.obtener(id, cx);
       await this.auditoria.registrar(
         { usuarioId: actor.sub, accion: activo ? 'EDITAR' : 'INACTIVAR', tabla: 'usuarios', registroId: id, antes: { activo: antes.activo }, despues: { activo }, ip },
@@ -128,14 +135,27 @@ export class UsuariosService {
     }
     const usuario = await this.obtener(id);
     if (!usuario.activo) throw new BadRequestException('Active el usuario antes de restablecer su clave');
-    const claveTemporal = generarClaveTemporal();
+    const claveTemporal = generarClaveTemporal(12);
     await this.db.ejecutar(
-      `UPDATE usuarios SET clave_hash = ?, debe_cambiar_clave = 1, intentos_fallidos = 0,
-              bloqueado_hasta = NULL, actualizado_por = ? WHERE id = ?`,
-      [await bcrypt.hash(claveTemporal, 10), actor.sub, id],
+      `UPDATE usuarios SET clave_hash = ?, debe_cambiar_clave = 1, intentos_fallidos = 0, clave_cambiada_en = NOW(),
+              bloqueado_hasta = NULL, version_sesion = version_sesion + 1, actualizado_por = ? WHERE id = ?`,
+      [await bcrypt.hash(claveTemporal, 12), actor.sub, id],
     );
     await this.auditoria.registrar({ usuarioId: actor.sub, accion: 'EDITAR', tabla: 'usuarios', registroId: id, despues: { cambio: 'restablecer clave' }, ip });
     return { usuario: await this.obtener(id), claveTemporal };
+  }
+
+  /** Borra la doble verificación (celular perdido o cambiado): la configura de nuevo al ingresar. */
+  async reiniciarVerificacion(id: number, actor: UsuarioToken, ip?: string) {
+    if (id === actor.sub) throw new BadRequestException('Otro administrador debe reiniciar su doble verificación');
+    await this.obtener(id);
+    await this.db.ejecutar(
+      `UPDATE usuarios SET totp_activo = 0, totp_secreto = NULL, totp_respaldo = NULL, totp_ultimo_paso = NULL,
+              version_sesion = version_sesion + 1, actualizado_por = ? WHERE id = ?`,
+      [actor.sub, id],
+    );
+    await this.auditoria.registrar({ usuarioId: actor.sub, accion: 'EDITAR', tabla: 'usuarios', registroId: id, despues: { cambio: 'reinició la doble verificación' }, ip });
+    return this.obtener(id);
   }
 
   private async idRol(codigo: string, cx: Conexion = this.db): Promise<number> {

@@ -11,7 +11,34 @@ erDiagram
     tinyint debe_cambiar_clave
     tinyint intentos_fallidos
     datetime bloqueado_hasta
+    int version_sesion
+    datetime clave_cambiada_en
+    varchar totp_secreto
+    tinyint totp_activo
+    text totp_respaldo
+    bigint totp_ultimo_paso
     datetime ultimo_acceso
+  }
+  historial_claves {
+    int id PK
+    int usuario_id FK
+    varchar clave_hash
+    datetime creado_en
+  }
+  textos_legales {
+    int id PK
+    enum tipo
+    smallint version
+    text texto
+    tinyint vigente
+    int creado_por FK
+  }
+  aceptaciones_legales {
+    int id PK
+    int usuario_id FK
+    int texto_id FK
+    datetime aceptado_en
+    varchar ip
   }
   roles {
     int id PK
@@ -67,3 +94,7 @@ erDiagram
   usuarios |o--o{ auditoria : "usuario_id"
   colaboradores |o--o{ alertas : "colaborador_id"
   usuarios |o--o{ alertas : "atendida_por"
+  usuarios ||--o{ historial_claves : "usuario_id"
+  usuarios ||--o{ aceptaciones_legales : "usuario_id"
+  textos_legales ||--o{ aceptaciones_legales : "texto_id"
+  usuarios |o--o{ textos_legales : "creado_por"

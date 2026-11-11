@@ -62,6 +62,12 @@ CREATE TABLE usuarios (
   debe_cambiar_clave  TINYINT(1)   NOT NULL DEFAULT 1,
   intentos_fallidos   TINYINT UNSIGNED NOT NULL DEFAULT 0,
   bloqueado_hasta     DATETIME     NULL,
+  version_sesion      INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Al aumentar se cierran todas las sesiones abiertas',
+  clave_cambiada_en   DATETIME     NULL COMMENT 'Para el vencimiento de la clave',
+  totp_secreto        VARCHAR(255) NULL COMMENT 'Secreto de la doble verificación, cifrado',
+  totp_activo         TINYINT(1)   NOT NULL DEFAULT 0,
+  totp_respaldo       TEXT         NULL COMMENT 'JSON con los hashes de los códigos de respaldo sin usar',
+  totp_ultimo_paso    BIGINT       NULL COMMENT 'Último código aceptado; impide usarlo dos veces',
   ultimo_acceso       DATETIME     NULL,
   activo              TINYINT(1)   NOT NULL DEFAULT 1,
   creado_en           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,6 +98,42 @@ CREATE TABLE auditoria (
   CONSTRAINT ck_auditoria_antes   CHECK (datos_antes IS NULL OR JSON_VALID(datos_antes)),
   CONSTRAINT ck_auditoria_despues CHECK (datos_despues IS NULL OR JSON_VALID(datos_despues))
 ) ENGINE=InnoDB COMMENT='Registro de cambios y consultas de datos sensibles';
+
+CREATE TABLE historial_claves (
+  id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_id  INT UNSIGNED NOT NULL,
+  clave_hash  VARCHAR(255) NOT NULL,
+  creado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_historial_claves_usuario (usuario_id, id),
+  CONSTRAINT fk_historial_claves_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+) ENGINE=InnoDB COMMENT='Hashes de las claves anteriores de cada usuario';
+
+CREATE TABLE textos_legales (
+  id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tipo        ENUM('CONFIDENCIALIDAD') NOT NULL,
+  version     SMALLINT UNSIGNED NOT NULL,
+  texto       TEXT         NOT NULL,
+  vigente     TINYINT(1)   NOT NULL DEFAULT 1,
+  creado_por  INT UNSIGNED NULL,
+  creado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_texto_legal_version (tipo, version),
+  CONSTRAINT fk_texto_legal_usuario FOREIGN KEY (creado_por) REFERENCES usuarios (id)
+) ENGINE=InnoDB COMMENT='Compromiso de confidencialidad y otros textos que los usuarios aceptan';
+
+CREATE TABLE aceptaciones_legales (
+  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_id   INT UNSIGNED NOT NULL,
+  texto_id     INT UNSIGNED NOT NULL,
+  aceptado_en  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ip           VARCHAR(45)  NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_aceptacion (usuario_id, texto_id),
+  CONSTRAINT fk_aceptacion_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_aceptacion_texto   FOREIGN KEY (texto_id) REFERENCES textos_legales (id)
+) ENGINE=InnoDB COMMENT='Quién aceptó cada versión del compromiso, cuándo y desde qué equipo';
+
 
 -- ---------------------------------------------------------------------
 --  2. CATÁLOGOS
@@ -141,6 +183,7 @@ CREATE TABLE tipos_documento_expediente (
   dias_alerta          SMALLINT UNSIGNED NULL COMMENT 'Días de anticipación; NULL = valor general de configuracion',
   visible_sst          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'SST puede ver este tipo de documento',
   es_sensible          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'Datos médicos u otros datos sensibles (Ley 1581)',
+  obligatorio_todos    TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'Obligatorio para todos los colaboradores, sin importar el cargo',
   activo               TINYINT(1)   NOT NULL DEFAULT 1,
   PRIMARY KEY (id),
   UNIQUE KEY uq_tde_nombre (nombre)
@@ -552,7 +595,7 @@ CREATE TABLE movimientos_inventario (
 
 CREATE TABLE alertas (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tipo              ENUM('DOCUMENTO_POR_VENCER','DOCUMENTO_VENCIDO','CONTRATO_POR_VENCER','EPP_REPOSICION','DOTACION_PENDIENTE','ACTA_SIN_FIRMAR','ELEMENTOS_SIN_DEVOLVER') NOT NULL,
+  tipo              ENUM('DOCUMENTO_POR_VENCER','DOCUMENTO_VENCIDO','CONTRATO_POR_VENCER','EPP_REPOSICION','DOTACION_PENDIENTE','ACTA_SIN_FIRMAR','ELEMENTOS_SIN_DEVOLVER','AUTORIZACION_DATOS') NOT NULL,
   rol_destino       ENUM('TH','SST','TODOS') NOT NULL,
   colaborador_id    INT UNSIGNED NULL,
   referencia_tabla  VARCHAR(40)  NOT NULL COMMENT 'documentos, actas_detalle, actas, colaboradores...',

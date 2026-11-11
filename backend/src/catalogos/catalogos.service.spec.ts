@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import type { UsuarioToken } from '../common/tipos.js';
 import { CatalogosService } from './catalogos.service.js';
 
-const actor: UsuarioToken = { sub: 7, usuario: 'admin', nombre: 'Admin', cargo: 'Admin', rol: 'ADMIN', permisos: [], cambiarClave: false };
+const actor: UsuarioToken = { sub: 7, usuario: 'admin', nombre: 'Admin', cargo: 'Admin', rol: 'ADMIN', permisos: [], cambiarClave: false, motivoClave: null, aceptarCompromiso: false, dobleVerificacion: false, v: 0, ini: 0 };
 
 function crear(opciones: { refActiva?: boolean; refExiste?: boolean; duplicado?: boolean } = {}) {
   const sqls: { sql: string; params: unknown[] }[] = [];

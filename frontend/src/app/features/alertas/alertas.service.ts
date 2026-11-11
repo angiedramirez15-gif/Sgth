@@ -5,7 +5,7 @@ import { SesionService } from '../../core/sesion.service';
 
 export type TipoAlerta =
   | 'DOCUMENTO_VENCIDO' | 'DOCUMENTO_POR_VENCER' | 'CONTRATO_POR_VENCER' | 'EPP_REPOSICION'
-  | 'DOTACION_PENDIENTE' | 'ACTA_SIN_FIRMAR' | 'ELEMENTOS_SIN_DEVOLVER';
+  | 'DOTACION_PENDIENTE' | 'ACTA_SIN_FIRMAR' | 'ELEMENTOS_SIN_DEVOLVER' | 'AUTORIZACION_DATOS';
 
 export interface Alerta {
   id: number;
@@ -39,6 +39,7 @@ export const TIPOS: Record<TipoAlerta, { titulo: string; icono: string; accion: 
   DOTACION_PENDIENTE: { titulo: 'Dotación pendiente', icono: 'apparel', accion: 'Entregar dotación' },
   ACTA_SIN_FIRMAR: { titulo: 'Actas sin la firmada', icono: 'draft', accion: 'Ver acta' },
   ELEMENTOS_SIN_DEVOLVER: { titulo: 'Retirados con elementos', icono: 'assignment_return', accion: 'Registrar devolución' },
+  AUTORIZACION_DATOS: { titulo: 'Sin autorización de datos', icono: 'privacy_tip', accion: 'Cargar autorización' },
 };
 export const ORDEN_TIPOS = Object.keys(TIPOS) as TipoAlerta[];
 
@@ -54,6 +55,8 @@ export function destino(a: Pick<Alerta, 'tipo' | 'colaboradorId' | 'referenciaId
       return { ruta: ['/actas/entrega'], query: { tipo: 'DOTACION', colaborador: a.colaboradorId } };
     case 'ACTA_SIN_FIRMAR':
       return { ruta: ['/actas', a.referenciaId] };
+    case 'AUTORIZACION_DATOS':
+      return { ruta: ['/colaboradores', a.colaboradorId], query: { pestana: 'documentos' } };
     case 'ELEMENTOS_SIN_DEVOLVER':
       return { ruta: ['/actas/devolucion'], query: { colaborador: a.colaboradorId } };
     default:

@@ -12,6 +12,8 @@ import { filter, map } from 'rxjs';
 import { MENU_ADMINISTRACION, MENU_PRINCIPAL } from '../core/menu';
 import { SesionService } from '../core/sesion.service';
 import { AlertasService } from '../features/alertas/alertas.service';
+import { MatDialog } from '@angular/material/dialog';
+import { RespaldosDialogo } from './respaldos-dialogo';
 
 const NOMBRE_ROL: Record<string, string> = {
   ADMIN: 'Administrador',
@@ -31,6 +33,11 @@ export class Estructura {
   private readonly sesion = inject(SesionService);
   private readonly router = inject(Router);
   private readonly alertas = inject(AlertasService);
+  private readonly dialogo = inject(MatDialog);
+
+  respaldos() {
+    this.dialogo.open(RespaldosDialogo, { autoFocus: 'dialog' });
+  }
 
   /** Alertas activas que se muestran junto a la opción "Alertas" del menú. */
   protected readonly totalAlertas = computed(() => this.alertas.resumen()?.total ?? 0);

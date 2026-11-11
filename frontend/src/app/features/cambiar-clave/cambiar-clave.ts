@@ -30,6 +30,7 @@ export class CambiarClave {
   private readonly avisos = inject(MatSnackBar);
 
   protected readonly obligatorio = this.sesion.debeCambiarClave;
+  protected readonly motivo = computed(() => this.sesion.usuario()?.motivoClave ?? null);
   protected readonly nombre = computed(() => this.sesion.usuario()?.nombre ?? '');
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -37,7 +38,7 @@ export class CambiarClave {
   protected readonly form = inject(FormBuilder).nonNullable.group(
     {
       claveActual: ['', Validators.required],
-      claveNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/(?=.*[A-Za-zÁÉÍÓÚáéíóúÑñ])(?=.*\d)/)]],
+      claveNueva: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(72), Validators.pattern(/(?=.*[A-Za-zÁÉÍÓÚáéíóúÑñ])(?=.*\d)/)]],
       confirmar: ['', Validators.required],
     },
     { validators: coinciden },
@@ -49,10 +50,14 @@ export class CambiarClave {
   protected readonly requisitos = computed(() => {
     const v = this.valores();
     const nueva = v.claveNueva ?? '';
+    const u = this.sesion.usuario();
+    const sinTildes = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const partes = [u?.usuario ?? '', ...(u?.nombre ?? '').split(/\s+/)].map(sinTildes).filter((p) => p.length >= 4);
     return [
-      { texto: 'Al menos 8 caracteres', cumple: nueva.length >= 8 },
-      { texto: 'Al menos una letra y un número', cumple: /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(nueva) && /\d/.test(nueva) },
-      { texto: 'Diferente a la clave actual', cumple: !!nueva && nueva !== v.claveActual },
+      { texto: 'Al menos 12 caracteres (puede ser una frase con espacios)', cumple: nueva.length >= 12 },
+      { texto: 'Letras y números', cumple: /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(nueva) && /\d/.test(nueva) },
+      { texto: 'Sin su usuario ni su nombre', cumple: !!nueva && !partes.some((p) => sinTildes(nueva).includes(p)) },
+      { texto: 'Sin secuencias como 1234 o abcd, ni el mismo carácter 4 veces', cumple: !!nueva && !/(.)\1{3,}/.test(nueva) && !/(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)/i.test(nueva) },
       { texto: 'Las dos claves nuevas coinciden', cumple: !!nueva && nueva === v.confirmar },
     ];
   });
@@ -68,7 +73,7 @@ export class CambiarClave {
       const { claveActual, claveNueva } = this.form.getRawValue();
       await this.sesion.cambiarClave(claveActual, claveNueva);
       this.avisos.open('Clave cambiada', 'Cerrar', { duration: 4000, panelClass: 'sgth-aviso-ok' });
-      await this.router.navigate(['/']);
+      await this.router.navigate([this.sesion.destino()]);
     } catch (e) {
       this.error.set(mensajeDeError(e, 'No se pudo cambiar la clave'));
     } finally {

@@ -128,3 +128,18 @@
   &--ocupado { opacity: 0.6; pointer-events: none; }
   mat-icon { font-size: 20px; width: 20px; height: 20px; }
 }
+
+// --- Compromiso de confidencialidad ---
+.compromiso { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; border-top: 1px solid var(--sgth-linea); }
+.compromiso__texto {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--sgth-linea);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  &:focus { outline: 2px solid var(--sgth-petroleo); outline-offset: 1px; }
+}
+.compromiso__acciones { display: flex; justify-content: flex-end; gap: 8px; }

@@ -36,6 +36,8 @@ export const PARAMETROS: Parametro[] = [
 
   { clave: 'sesion_minutos_inactividad', etiqueta: 'Cierre de sesión por inactividad', grupo: 'Seguridad', tipo: 'numero', minimo: 5, maximo: 480, sufijo: 'minutos', editable: true, ayuda: 'Aplica desde el siguiente inicio de sesión' },
   { clave: 'login_intentos_maximos', etiqueta: 'Intentos fallidos antes de bloquear', grupo: 'Seguridad', tipo: 'numero', minimo: 3, maximo: 10, sufijo: 'intentos', editable: true, ayuda: 'El usuario queda bloqueado 15 minutos' },
+  { clave: 'clave_dias_vigencia', etiqueta: 'Vigencia de las claves', grupo: 'Seguridad', tipo: 'numero', minimo: 30, maximo: 365, sufijo: 'días', editable: true, ayuda: 'Al cumplirse, el sistema pide cambiar la clave' },
+  { clave: 'clave_longitud_minima', etiqueta: 'Longitud mínima de las claves', grupo: 'Seguridad', tipo: 'numero', minimo: 12, maximo: 30, sufijo: 'caracteres', editable: true },
 
   { clave: 'tamano_max_archivo_mb', etiqueta: 'Tamaño máximo por archivo', grupo: 'Archivos', tipo: 'numero', minimo: 1, maximo: 50, sufijo: 'MB', editable: true },
   { clave: 'ruta_archivos', etiqueta: 'Carpeta de archivos en el servidor', grupo: 'Archivos', tipo: 'texto', editable: false, ayuda: 'Se cambia en el servidor; moverla sin copiar los archivos rompería los documentos guardados' },

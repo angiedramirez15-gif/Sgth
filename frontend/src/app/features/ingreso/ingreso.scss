@@ -85,7 +85,7 @@
   padding: 48px 24px 24px;
   background: var(--sgth-superficie);
 
-  form {
+  form, .respaldo {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -150,7 +150,7 @@ mat-progress-bar { margin-top: 8px; }
     padding-top: 40px;
     border-top: 10px solid var(--sgth-verde);
 
-    form { margin: 0 auto; }
+    form, .respaldo { margin: 0 auto; }
     .pie { margin-top: auto; padding-top: 32px; text-align: center; }
   }
   .formulario__logo-movil {
@@ -160,3 +160,28 @@ mat-progress-bar { margin-top: 8px; }
     margin-bottom: 36px;
   }
 }
+
+.privacidad { margin: 20px 0 0; font-size: 0.78rem; line-height: 1.45; color: var(--sgth-tinta-suave); }
+.enlaces { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; margin-top: 8px; }
+.codigo { font-size: 1.3rem; letter-spacing: 0.3em; font-variant-numeric: tabular-nums; }
+.pasos {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 0.92rem;
+  li { margin-bottom: 10px; }
+}
+.qr { display: block; margin: 10px 0 6px; border: 1px solid var(--sgth-linea); border-radius: 6px; }
+.manual { display: block; font-size: 0.8rem; color: var(--sgth-tinta-suave); code { font-size: 0.85rem; color: var(--sgth-tinta); word-break: break-all; } }
+.respaldo { gap: 14px; }
+.codigos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--sgth-petroleo);
+  border-radius: 6px;
+  list-style: none;
+  code { font-size: 1rem; letter-spacing: 0.05em; }
+}
+.confirmar { margin-top: 4px; }

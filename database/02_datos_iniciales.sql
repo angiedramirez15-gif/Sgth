@@ -97,7 +97,7 @@ INSERT INTO tipos_documento_expediente (nombre, maneja_vencimiento, dias_alerta,
   ('Examen médico ocupacional de retiro', 0, NULL, 1, 1),
   ('Certificado de trabajo seguro en alturas', 1, '30', 1, 0),
   ('Inducción y reinducción SST', 0, NULL, 1, 0),
-  ('Autorización de tratamiento de datos personales', 0, NULL, 0, 0),
+  ('Autorización de tratamiento de datos personales', 0, NULL, 0, 0), -- obligatorio_todos = 1 más abajo
   ('Renuncia o carta de terminación', 0, NULL, 0, 0),
   ('Paz y salvo', 0, NULL, 0, 0),
   ('Otros', 0, NULL, 0, 0);
@@ -163,6 +163,8 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('dotacion_meses_minimos', '3', 'Meses de servicio para tener derecho a dotación (Art. 230 CST)'),
   ('sesion_minutos_inactividad', '30', 'Minutos de inactividad antes de cerrar la sesión (RF-02)'),
   ('login_intentos_maximos', '5', 'Intentos fallidos antes de bloquear el usuario 15 minutos'),
+  ('clave_dias_vigencia', '90', 'Días que dura una clave antes de pedir cambiarla'),
+  ('clave_longitud_minima', '12', 'Caracteres mínimos de una clave'),
   ('url_sistema', 'http://localhost:3000', 'Dirección con la que se abre el sistema en la red; va en el QR de los stickers'),
   ('prefijo_placa', 'DD', 'Prefijo de las placas de inventario: DD-EQ-0001'),
   ('empresa_nit', NULL, 'NIT de la empresa; va en los certificados laborales'),
@@ -214,6 +216,21 @@ SELECT 'CERTIFICADO', 1, 'CERTIFICACIÓN LABORAL',
   'CERTIFICA QUE:',
   '["{{EL_SENOR_CAP}} {{NOMBRE}}, {{IDENTIFICADO}} con {{TIPO_DOC}} No. {{NUMERO_DOC}}, {{LABORA}} en nuestra empresa {{PERIODO_LABORAL}}, desempeñando el cargo de {{CARGO}}, {{TIPO_CONTRATO}}.", "Por sus servicios {{DEVENGA}} un salario básico mensual de {{SALARIO}}.", "La presente certificación se expide a solicitud {{DEL_INTERESADO}} en {{CIUDAD}}, el {{FECHA_EXPEDICION}}."]'
 ;
+
+-- 13. Autorización de datos obligatoria para todos y compromiso de confidencialidad (versión 1)
+UPDATE tipos_documento_expediente SET obligatorio_todos = 1 WHERE nombre = 'Autorización de tratamiento de datos personales';
+INSERT INTO textos_legales (tipo, version, texto)
+VALUES ('CONFIDENCIALIDAD', 1,
+'Como usuario del Sistema de Gestión de Talento Humano (SGTH) de DRIM DUIT S.A.S., me comprometo a:
+
+1. Usar la información de los colaboradores solo para las funciones de mi cargo y para las finalidades autorizadas por cada titular.
+2. Guardar reserva sobre los datos personales y, en especial, sobre los datos sensibles (salud, exámenes médicos, datos de salario y bancarios), durante mi vinculación y después de ella.
+3. No copiar, descargar, imprimir, enviar ni compartir información del sistema sin una razón laboral, y no dejarla al alcance de personas no autorizadas.
+4. No prestar mi usuario, mi contraseña ni mi código de verificación, y cerrar la sesión cuando me retire del equipo.
+5. Informar de inmediato al área de Talento Humano cualquier pérdida, acceso indebido o uso sospechoso de la información.
+
+Entiendo que el sistema registra las consultas y acciones que realizo, y que el incumplimiento de este compromiso puede dar lugar a sanciones disciplinarias y a las responsabilidades previstas en la Ley 1581 de 2012 y demás normas sobre protección de datos personales.'
+);
 
 COMMIT;
 

@@ -1,4 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +11,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AvisosService } from '../../../shared/avisos.service';
 import { AdministracionService, type Parametro } from '../administracion.service';
 import { CertificadosService } from '../../certificados/certificados.service';
+
+interface Compromiso { id: number; version: number; texto: string; creadoEn: string; creadoPor: string | null; usuariosActivos: number; aceptaron: number }
 
 const ORDEN_GRUPOS = ['Dotación', 'Alertas', 'Empresa y actas', 'Certificados laborales', 'Seguridad', 'Archivos'];
 
@@ -29,6 +33,11 @@ export class Configuracion implements OnInit, OnDestroy {
   protected readonly guardando = signal<string | null>(null);
 
   private readonly certificados = inject(CertificadosService);
+  private readonly http = inject(HttpClient);
+  /** Compromiso de confidencialidad vigente (cada cambio crea una versión que todos deben aceptar). */
+  protected readonly compromiso = signal<Compromiso | null>(null);
+  protected textoCompromiso = '';
+  protected readonly guardandoCompromiso = signal(false);
   /** Imagen de la firma de los certificados (URL local del navegador). */
   protected readonly firma = signal<string | null>(null);
   protected readonly subiendoFirma = signal(false);
@@ -48,10 +57,41 @@ export class Configuracion implements OnInit, OnDestroy {
       this.parametros.set(ps);
       this.borradores.set(Object.fromEntries(ps.map((p) => [p.clave, p.valor ?? ''])));
       if (ps.some((p) => p.grupo === 'Certificados laborales')) await this.cargarFirma();
+      await this.cargarCompromiso();
     } catch (e) {
       this.avisos.error(e, 'No se pudo cargar la configuración');
     } finally {
       this.cargando.set(false);
+    }
+  }
+
+  private async cargarCompromiso() {
+    try {
+      const c = await firstValueFrom(this.http.get<Compromiso | null>('/api/compromiso'));
+      this.compromiso.set(c);
+      this.textoCompromiso = c?.texto ?? '';
+    } catch {
+      this.compromiso.set(null);
+    }
+  }
+
+  async guardarCompromiso() {
+    const ok = await this.avisos.confirmar({
+      titulo: 'Publicar compromiso nuevo',
+      mensaje: 'Se creará una versión nueva del compromiso de confidencialidad. Todos los usuarios deberán leerla y aceptarla la próxima vez que usen el sistema.',
+      accion: 'Publicar versión nueva',
+    });
+    if (!ok) return;
+    this.guardandoCompromiso.set(true);
+    try {
+      const c = await firstValueFrom(this.http.post<Compromiso>('/api/compromiso', { texto: this.textoCompromiso }));
+      this.compromiso.set(c);
+      this.textoCompromiso = c.texto;
+      this.avisos.exito(`Compromiso publicado (versión ${c.version})`);
+    } catch (e) {
+      this.avisos.error(e, 'No se pudo guardar el compromiso');
+    } finally {
+      this.guardandoCompromiso.set(false);
     }
   }
 

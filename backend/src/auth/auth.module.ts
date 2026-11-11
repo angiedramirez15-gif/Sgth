@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { AutenticacionGuard } from '../common/guards/autenticacion.guard.js';
+import { CompromisoController } from '../seguridad/compromiso.controller.js';
 
 @Module({
   imports: [
@@ -18,12 +19,12 @@ import { AutenticacionGuard } from '../common/guards/autenticacion.guard.js';
         }
         return {
           secret: secreto,
-          signOptions: { expiresIn: config.get('JWT_EXPIRA', '8h') },
+          signOptions: { expiresIn: '30m' }, // cada token indica su propio vencimiento
         };
       },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, CompromisoController],
   providers: [AuthService, { provide: APP_GUARD, useClass: AutenticacionGuard }],
 })
 export class AuthModule {}

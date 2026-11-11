@@ -42,3 +42,10 @@
   font-size: 0.875rem;
   color: var(--sgth-tinta-suave);
 }
+
+.seguridad {
+  white-space: nowrap;
+  span { display: flex; align-items: center; gap: 4px; font-size: 0.82rem; color: var(--sgth-verde-texto); }
+  span.falta { color: var(--sgth-ambar); }
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}

@@ -64,8 +64,9 @@ export class DocumentosService {
     const faltantes = await this.db.consultar<{ id: number; nombre: string }>(
       `SELECT t.id, t.nombre
          FROM colaboradores c
-         JOIN documentos_obligatorios_cargo o ON o.cargo_id = c.cargo_id
-         JOIN tipos_documento_expediente t ON t.id = o.tipo_documento_id AND t.activo = 1
+         JOIN tipos_documento_expediente t ON t.activo = 1
+              AND (t.obligatorio_todos = 1
+                   OR EXISTS (SELECT 1 FROM documentos_obligatorios_cargo o WHERE o.cargo_id = c.cargo_id AND o.tipo_documento_id = t.id))
         WHERE c.id = ? ${filtroSst}
           AND NOT EXISTS (SELECT 1 FROM documentos d WHERE d.colaborador_id = c.id AND d.tipo_documento_id = t.id
                              AND d.vigente = 1 AND d.activo = 1)

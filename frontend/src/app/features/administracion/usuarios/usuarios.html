@@ -43,6 +43,7 @@
                 <th scope="col">Cargo</th>
                 <th scope="col">Rol</th>
                 <th scope="col">Estado</th>
+                <th scope="col">Seguridad</th>
                 <th scope="col">Último ingreso</th>
                 <th scope="col" class="acciones"><span class="lector">Acciones</span></th>
               </tr>
@@ -69,6 +70,14 @@
                       <span class="sgth-estado sgth-estado--activo">Activo</span>
                     }
                   </td>
+                  <td class="seguridad">
+                    <span [class.falta]="!u.dobleVerificacion" [matTooltip]="u.dobleVerificacion ? 'Doble verificación activa' : 'Sin doble verificación (se pide al ingresar si su rol ve datos sensibles)'">
+                      <mat-icon>{{ u.dobleVerificacion ? 'verified_user' : 'gpp_maybe' }}</mat-icon>{{ u.dobleVerificacion ? '2 pasos' : 'Solo clave' }}
+                    </span>
+                    <span [class.falta]="!u.compromisoAceptado" [matTooltip]="u.compromisoAceptado ? 'Aceptó el compromiso el ' + u.compromisoAceptado : 'No ha aceptado el compromiso vigente'">
+                      <mat-icon>{{ u.compromisoAceptado ? 'task_alt' : 'pending' }}</mat-icon>Compromiso
+                    </span>
+                  </td>
                   <td>
                     @if (u.ultimoAcceso) {
                       {{ u.ultimoAcceso.replace(' ', 'T') | date: 'd MMM y, h:mm a' }}
@@ -85,6 +94,9 @@
                       @if (u.id !== yo()?.id) {
                         @if (u.activo) {
                           <button mat-menu-item (click)="restablecer(u)"><mat-icon>lock_reset</mat-icon>Restablecer clave</button>
+                          @if (u.dobleVerificacion) {
+                            <button mat-menu-item (click)="reiniciarVerificacion(u)"><mat-icon>phonelink_erase</mat-icon>Reiniciar doble verificación</button>
+                          }
                         }
                         <button mat-menu-item (click)="cambiarEstado(u)">
                           <mat-icon>{{ u.activo ? 'person_off' : 'person_check' }}</mat-icon>{{ u.activo ? 'Inactivar' : 'Activar' }}

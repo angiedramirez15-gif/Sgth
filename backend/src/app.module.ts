@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogosModule } from './catalogos/catalogos.module.js';
@@ -28,6 +30,11 @@ if (!servirFrontend.length) {
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Límite de peticiones por equipo (IP): frena ataques de fuerza bruta y abusos
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'general', ttl: 60_000, limit: 600 }],
+      errorMessage: 'Demasiadas solicitudes desde este equipo. Espere un minuto e intente de nuevo',
+    }),
     DatabaseModule,
     CompartidoModule,
     AuthModule,
@@ -41,5 +48,6 @@ if (!servirFrontend.length) {
     ...servirFrontend,
   ],
   controllers: [SaludController, ConfiguracionController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
