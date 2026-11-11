@@ -2,7 +2,7 @@
   <header class="sgth-encabezado">
     <div>
       <h1>Plantillas de actas</h1>
-      <p>Los textos de cada tipo de acta. Al guardar se crea una versión nueva; las actas que ya se generaron no cambian.</p>
+      <p>Los textos de cada tipo de acta y del certificado laboral. Al guardar se crea una versión nueva; lo que ya se generó no cambia.</p>
     </div>
   </header>
 
@@ -15,7 +15,7 @@
         @for (r of resumen(); track r.plantilla) {
           <button type="button" class="tipo" [class.tipo--activo]="actual()?.plantilla === r.plantilla" [attr.aria-current]="actual()?.plantilla === r.plantilla ? 'page' : null" (click)="elegir(r.plantilla)">
             <span class="tipo__nombre">{{ r.nombre }}</span>
-            <span class="tipo__dato">Versión {{ r.version }}{{ r.actas ? ', ' + r.actas + ' acta' + (r.actas === 1 ? '' : 's') : '' }}</span>
+            <span class="tipo__dato">Versión {{ r.version }}{{ usos(r.plantilla, r.actas) }}</span>
           </button>
         }
       </nav>
@@ -36,14 +36,16 @@
             </mat-form-field>
 
             <mat-form-field class="ancho">
-              <mat-label>Introducción (antes de la tabla de elementos)</mat-label>
+              <mat-label>{{ esCertificado() ? 'Introducción' : 'Introducción (antes de la tabla de elementos)' }}</mat-label>
               <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="3" cdkAutosizeMaxRows="16" [ngModel]="t.textoIntroduccion" (ngModelChange)="cambiar({ textoIntroduccion: $event })" (focus)="enfocar('intro', $event)" [readonly]="!puedeEditar"></textarea>
             </mat-form-field>
 
-            <div class="tabla-falsa" aria-hidden="true">Aquí va la tabla de elementos</div>
+            @if (!esCertificado()) {
+              <div class="tabla-falsa" aria-hidden="true">Aquí va la tabla de elementos</div>
+            }
 
             <mat-form-field class="ancho manifiesta">
-              <mat-label>Frase antes de las cláusulas</mat-label>
+              <mat-label>{{ esCertificado() ? 'Frase antes de los párrafos' : 'Frase antes de las cláusulas' }}</mat-label>
               <input matInput [ngModel]="t.textoManifiesta" (ngModelChange)="cambiar({ textoManifiesta: $event })" (focus)="enfocar('manifiesta', $event)" maxlength="150" [readonly]="!puedeEditar">
             </mat-form-field>
 
@@ -51,7 +53,7 @@
               @for (c of t.clausulas; track $index; let i = $index; let ultimo = $last) {
                 <li class="clausula">
                   <mat-form-field class="ancho" subscriptSizing="dynamic">
-                    <mat-label>Cláusula {{ i + 1 }}</mat-label>
+                    <mat-label>{{ esCertificado() ? 'Párrafo' : 'Cláusula' }} {{ i + 1 }}</mat-label>
                     <textarea matInput [id]="'clausula-' + i" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="16" [ngModel]="c" (ngModelChange)="cambiarClausula(i, $event)" (focus)="enfocar('' + i, $event)" [readonly]="!puedeEditar"></textarea>
                   </mat-form-field>
                   @if (puedeEditar) {
@@ -65,7 +67,10 @@
               }
             </ol>
             @if (puedeEditar) {
-              <button mat-button type="button" (click)="agregarClausula()"><mat-icon>add</mat-icon>Agregar cláusula</button>
+              <button mat-button type="button" (click)="agregarClausula()"><mat-icon>add</mat-icon>{{ esCertificado() ? 'Agregar párrafo' : 'Agregar cláusula' }}</button>
+            }
+            @if (esCertificado()) {
+              <p class="nota-certificado"><mat-icon>info</mat-icon>El párrafo que tenga {{ '{{SALARIO}}' }} se quita cuando el certificado se genera sin salario. La firma, el nombre y el cargo de quien firma se cambian en Configuración.</p>
             }
           </div>
 
@@ -85,7 +90,7 @@
         <aside class="lateral">
           <section class="bloque" aria-labelledby="t-campos">
             <h2 id="t-campos">Campos</h2>
-            <p class="secundario">El sistema los reemplaza con los datos de cada acta. Haga clic en el texto y luego en el campo para ponerlo.</p>
+            <p class="secundario">El sistema los reemplaza con los datos de cada {{ esCertificado() ? 'certificado' : 'acta' }}. Haga clic en el texto y luego en el campo para ponerlo.</p>
             <ul class="campos">
               @for (c of actual()!.campos; track c.campo) {
                 <li>
@@ -104,7 +109,7 @@
                   <span class="versiones__numero">v{{ v.version }}</span>
                   <span class="versiones__texto">
                     {{ v.creadoEn.replace(' ', 'T') | date: 'd MMM y' }}{{ v.vigente ? ', vigente' : '' }}
-                    <span class="secundario">{{ v.creadoPor ?? 'Sistema' }}{{ v.actas ? ', ' + v.actas + ' acta' + (v.actas === 1 ? '' : 's') : '' }}</span>
+                    <span class="secundario">{{ v.creadoPor ?? 'Sistema' }}{{ usos(actual()!.plantilla, v.actas) }}</span>
                   </span>
                   @if (!v.vigente && puedeEditar) {
                     <button mat-button type="button" (click)="restaurar(v)">Usar estos textos</button>

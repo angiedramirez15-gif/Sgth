@@ -77,6 +77,36 @@ erDiagram
     varchar motivo_anulacion
     int anulada_por FK
     datetime anulada_en
+    tinyint es_historica
+    date fecha_entrega_original
+    varchar ubicacion
+    int planilla_id FK
+    varchar ruta_soporte_original
+  }
+  planillas_epp {
+    int id PK
+    varchar consecutivo UK
+    date fecha
+    varchar motivo
+    int usuario_id FK
+    varchar firmante_nombre
+    varchar firmante_cargo
+    varchar ruta_pdf_generado
+    varchar ruta_planilla_firmada
+  }
+  certificados_laborales {
+    int id PK
+    varchar consecutivo UK
+    int colaborador_id FK
+    int plantilla_id FK
+    date fecha_expedicion
+    tinyint con_salario
+    varchar dirigido_a
+    longtext datos
+    varchar firmante_nombre
+    varchar firmante_cargo
+    varchar ruta_pdf
+    int creado_por FK
   }
   actas_detalle {
     int id PK
@@ -147,3 +177,8 @@ erDiagram
   actas |o--o{ actas_detalle : "repuesto_en_acta_id"
   cargos ||--o{ matriz_epp_cargo : "cargo_id"
   elementos ||--o{ matriz_epp_cargo : "elemento_id"
+  planillas_epp |o--o{ actas : "planilla_id"
+  usuarios ||--o{ planillas_epp : "usuario_id"
+  colaboradores ||--o{ certificados_laborales : "colaborador_id"
+  plantillas_acta ||--o{ certificados_laborales : "plantilla_id"
+  usuarios ||--o{ certificados_laborales : "creado_por"

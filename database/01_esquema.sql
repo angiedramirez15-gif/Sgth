@@ -376,7 +376,7 @@ CREATE TABLE matriz_epp_cargo (
 
 CREATE TABLE plantillas_acta (
   id                  INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  plantilla           ENUM('DOTACION','EPP','EQUIPOS','MUEBLES','OTROS','DEVOLUCION') NOT NULL,
+  plantilla           ENUM('DOTACION','EPP','EQUIPOS','MUEBLES','OTROS','DEVOLUCION','CERTIFICADO') NOT NULL,
   version             SMALLINT UNSIGNED NOT NULL DEFAULT 1,
   titulo              VARCHAR(150) NOT NULL,
   texto_introduccion  TEXT         NOT NULL COMMENT 'Con campos {{campo}}',
@@ -493,6 +493,35 @@ CREATE TABLE actas_detalle (
   CONSTRAINT fk_detalle_repuesto FOREIGN KEY (repuesto_en_acta_id) REFERENCES actas (id),
   CONSTRAINT ck_detalle_cantidad CHECK (cantidad > 0 AND (activo_id IS NULL OR cantidad = 1))
 ) ENGINE=InnoDB COMMENT='Elementos de cada acta';
+
+CREATE TABLE consecutivos_certificado (
+  anio    SMALLINT UNSIGNED NOT NULL,
+  ultimo  INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (anio)
+) ENGINE=InnoDB COMMENT='Último número de certificado laboral por año (CER-AAAA-NNNN)';
+
+CREATE TABLE certificados_laborales (
+  id                INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  consecutivo       VARCHAR(20)  NOT NULL COMMENT 'CER-2026-0001',
+  colaborador_id    INT UNSIGNED NOT NULL,
+  plantilla_id      INT UNSIGNED NOT NULL COMMENT 'Versión de los textos usada',
+  fecha_expedicion  DATE         NOT NULL,
+  con_salario       TINYINT(1)   NOT NULL,
+  dirigido_a        VARCHAR(150) NULL COMMENT 'Vacío = A QUIEN INTERESE',
+  datos             LONGTEXT     NOT NULL COMMENT 'JSON con cargo, contrato, fechas y salario tal como salieron',
+  firmante_nombre   VARCHAR(150) NOT NULL,
+  firmante_cargo    VARCHAR(100) NOT NULL,
+  ruta_pdf          VARCHAR(500) NULL,
+  creado_por        INT UNSIGNED NOT NULL,
+  creado_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_certificado_consecutivo (consecutivo),
+  KEY ix_certificado_colaborador (colaborador_id),
+  CONSTRAINT fk_certificado_colaborador FOREIGN KEY (colaborador_id) REFERENCES colaboradores (id),
+  CONSTRAINT fk_certificado_plantilla   FOREIGN KEY (plantilla_id) REFERENCES plantillas_acta (id),
+  CONSTRAINT fk_certificado_usuario     FOREIGN KEY (creado_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_certificado_datos       CHECK (JSON_VALID(datos))
+) ENGINE=InnoDB COMMENT='Certificados laborales expedidos';
 
 CREATE TABLE movimientos_inventario (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

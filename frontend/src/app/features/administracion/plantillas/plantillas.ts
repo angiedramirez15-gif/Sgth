@@ -15,7 +15,13 @@ import { SesionService } from '../../../core/sesion.service';
 import { AvisosService } from '../../../shared/avisos.service';
 import { abrirPdf } from '../../inventario/inventario.service';
 
-type Tipo = 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS' | 'DEVOLUCION';
+type Tipo = 'DOTACION' | 'EPP' | 'EQUIPOS' | 'MUEBLES' | 'OTROS' | 'DEVOLUCION' | 'CERTIFICADO';
+
+/** "3 actas" o "3 certificados" según la plantilla. */
+export function usos(tipo: Tipo, n: number): string {
+  const palabra = tipo === 'CERTIFICADO' ? 'certificado' : 'acta';
+  return n ? `, ${n} ${palabra}${n === 1 ? '' : 's'}` : '';
+}
 
 interface Resumen { plantilla: Tipo; nombre: string; version: number | null; actualizada: string | null; actualizadaPor: string | null; versiones: number; actas: number }
 interface Campo { campo: string; descripcion: string; ejemplo: string }
@@ -34,12 +40,14 @@ interface Textos { titulo: string; textoIntroduccion: string; textoManifiesta: s
   styleUrl: './plantillas.scss',
 })
 export class Plantillas implements OnInit {
+  protected readonly usos = usos;
   private readonly http = inject(HttpClient);
   private readonly avisos = inject(AvisosService);
   protected readonly puedeEditar = inject(SesionService).puede('plantillas.gestionar');
 
   protected readonly resumen = signal<Resumen[]>([]);
   protected readonly actual = signal<Detalle | null>(null);
+  protected readonly esCertificado = computed(() => this.actual()?.plantilla === 'CERTIFICADO');
   protected readonly versiones = signal<Version[]>([]);
   protected readonly textos = signal<Textos | null>(null);
   protected readonly cargando = signal(true);

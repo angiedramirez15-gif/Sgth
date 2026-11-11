@@ -14,6 +14,9 @@ import { AvisosService } from '../../../shared/avisos.service';
 import { ColaboradoresService, etiqueta, type FichaColaborador, type OpcionesColaborador } from '../colaboradores.service';
 import { EntregasColaborador } from '../../actas/entregas-colaborador';
 import { EppColaborador } from '../../epp/epp-colaborador';
+import { CertificadoDialogo, type DatosCertificadoDialogo } from '../../certificados/certificado-dialogo';
+import { CertificadosColaborador } from '../../certificados/certificados-colaborador';
+import type { Certificado } from '../../certificados/certificados.service';
 import { Expediente } from './expediente';
 import { RetiroDialogo, type DatosRetiro } from './retiro-dialogo';
 
@@ -21,7 +24,7 @@ interface Dato { etiqueta: string; valor: string | number | null | undefined; an
 
 @Component({
   selector: 'app-ficha',
-  imports: [DatePipe, RouterLink, Avatar, Expediente, EntregasColaborador, EppColaborador, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
+  imports: [DatePipe, RouterLink, Avatar, Expediente, EntregasColaborador, EppColaborador, CertificadosColaborador, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, MatTabsModule],
   templateUrl: './ficha.html',
   styleUrl: './ficha.scss',
   providers: [DatePipe, DecimalPipe],
@@ -44,6 +47,7 @@ export class Ficha implements OnInit {
   protected readonly versionFoto = signal(0);
   protected readonly subiendoFoto = signal(false);
   protected readonly totalDocumentos = signal<number | null>(null);
+  protected readonly versionCertificados = signal(0);
 
   protected readonly puedeGestionar = this.sesion.puede('colaboradores.gestionar');
   protected readonly puedeVerDocumentos = this.sesion.puede('documentos.ver', 'documentos.ver_sst');
@@ -168,6 +172,20 @@ export class Ficha implements OnInit {
     } finally {
       this.subiendoFoto.set(false);
     }
+  }
+
+  /** Abre el diálogo para expedir el certificado laboral. */
+  certificado() {
+    const f = this.ficha();
+    if (!f) return;
+    this.dialogo
+      .open<CertificadoDialogo, DatosCertificadoDialogo, Certificado>(CertificadoDialogo, { data: { colaboradorId: f.id, nombre: this.nombre() }, autoFocus: 'dialog' })
+      .afterClosed()
+      .subscribe((k) => {
+        if (!k) return;
+        this.versionCertificados.update((v) => v + 1);
+        this.avisos.exito(`Certificado ${k.consecutivo} generado`);
+      });
   }
 
   async retirar() {

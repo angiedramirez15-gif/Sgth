@@ -3,8 +3,7 @@ import type { Response } from 'express';
 import { Permisos, UsuarioActual } from '../common/decorators/decoradores.js';
 import type { UsuarioToken } from '../common/tipos.js';
 import { PlantillaDto } from './dto/plantilla.dto.js';
-import { PlantillasService } from './plantillas.service.js';
-import type { Plantilla } from './textos.js';
+import { PlantillasService, type TipoPlantilla as Plantilla } from './plantillas.service.js';
 
 const VER = ['plantillas.ver', 'plantillas.gestionar'];
 
@@ -41,7 +40,7 @@ export class PlantillasController {
   @HttpCode(200)
   async vistaPrevia(@Param('plantilla') plantilla: Plantilla, @Body() dto: PlantillaDto, @Res({ passthrough: true }) res: Response) {
     const pdf = await this.plantillas.vistaPrevia(plantilla, dto);
-    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="Vista_previa_acta.pdf"' });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Vista_previa_${plantilla === 'CERTIFICADO' ? 'certificado' : 'acta'}.pdf"` });
     return new StreamableFile(pdf);
   }
 }

@@ -58,6 +58,26 @@
           </div>
         </div>
       }
+
+      @if (g.nombre === 'Certificados laborales') {
+        <div class="parametro">
+          <div class="parametro__texto">
+            <span class="parametro__etiqueta" id="et-firma">Firma de los certificados</span>
+            <p class="parametro__ayuda">Imagen PNG o JPG de la firma escaneada, de máximo 2 MB. Se ve mejor con fondo blanco o transparente y recortada justo a la firma.</p>
+          </div>
+          <div class="parametro__valor firma">
+            @if (firma()) {
+              <img [src]="firma()" alt="Firma actual de los certificados" class="firma__imagen">
+            } @else {
+              <span class="firma__vacia">Sin firma</span>
+            }
+            <label class="firma__boton" [class.firma__boton--ocupado]="subiendoFirma()">
+              <input type="file" accept="image/png,image/jpeg" (change)="subirFirma($event)" [disabled]="subiendoFirma()" aria-labelledby="et-firma">
+              <mat-icon>upload</mat-icon>{{ subiendoFirma() ? 'Subiendo…' : firma() ? 'Cambiar firma' : 'Subir firma' }}
+            </label>
+          </div>
+        </div>
+      }
     </section>
   }
 </div>

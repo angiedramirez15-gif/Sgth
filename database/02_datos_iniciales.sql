@@ -165,6 +165,10 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('login_intentos_maximos', '5', 'Intentos fallidos antes de bloquear el usuario 15 minutos'),
   ('url_sistema', 'http://localhost:3000', 'Dirección con la que se abre el sistema en la red; va en el QR de los stickers'),
   ('prefijo_placa', 'DD', 'Prefijo de las placas de inventario: DD-EQ-0001'),
+  ('empresa_nit', NULL, 'NIT de la empresa; va en los certificados laborales'),
+  ('certificado_firmante_nombre', NULL, 'Nombre de quien firma los certificados laborales'),
+  ('certificado_firmante_cargo', 'Directora Financiera', 'Cargo de quien firma los certificados laborales'),
+  ('certificado_firma', NULL, 'Imagen de la firma (se sube desde Configuración)'),
   ('pie_actas', 'Vía Aeropuerto – Cencar KM 5 – 200 ADM, Parque Industrial Guajira 7 | Cencar y Palmira – Colombia. Teléfono: 3009124445 | E-mail: administracion@drimduit.com', 'Pie de página de las actas; los renglones se separan con |');
 
 -- 10. Consecutivo de actas
@@ -203,8 +207,16 @@ INSERT INTO plantillas_acta (plantilla, version, titulo, texto_introduccion, tex
    'LAS PARTES MANIFIESTAN QUE:',
    '["La empresa recibe los elementos arriba descritos en el estado indicado en la columna correspondiente. Los faltantes, daños o novedades encontrados quedan registrados en la columna de observaciones.", "Con la firma de la presente acta, los elementos relacionados quedan descargados de la responsabilidad de {{EL_TRABAJADOR}}, y la presente sirve como soporte para su paz y salvo respecto de dichos elementos.", "Si se registran daños o faltantes, cualquier descuento solo procederá en los términos de los artículos 59, 149 y 150 del Código Sustantivo del Trabajo, con autorización previa, expresa, escrita y específica de {{EL_TRABAJADOR}}. La firma de la presente acta no constituye, por sí sola, dicha autorización."]');
 
+-- 12. Certificado laboral (versión 1). El párrafo con {{SALARIO}} se omite en los certificados sin salario.
+INSERT INTO plantillas_acta (plantilla, version, titulo, texto_introduccion, texto_manifiesta, clausulas)
+SELECT 'CERTIFICADO', 1, 'CERTIFICACIÓN LABORAL',
+  'La suscrita {{CARGO_FIRMANTE}} de {{EMPRESA}}, identificada con NIT {{NIT}},',
+  'CERTIFICA QUE:',
+  '["{{EL_SENOR_CAP}} {{NOMBRE}}, {{IDENTIFICADO}} con {{TIPO_DOC}} No. {{NUMERO_DOC}}, {{LABORA}} en nuestra empresa {{PERIODO_LABORAL}}, desempeñando el cargo de {{CARGO}}, {{TIPO_CONTRATO}}.", "Por sus servicios {{DEVENGA}} un salario básico mensual de {{SALARIO}}.", "La presente certificación se expide a solicitud {{DEL_INTERESADO}} en {{CIUDAD}}, el {{FECHA_EXPEDICION}}."]'
+;
+
 COMMIT;
 
--- Verificación rápida: deben aparecer 4 roles, 26 permisos, 1 usuario y 6 plantillas
+-- Verificación rápida: deben aparecer 4 roles, 26 permisos, 1 usuario y 7 plantillas
 SELECT (SELECT COUNT(*) FROM roles) AS roles, (SELECT COUNT(*) FROM permisos) AS permisos,
        (SELECT COUNT(*) FROM usuarios) AS usuarios, (SELECT COUNT(*) FROM plantillas_acta) AS plantillas;

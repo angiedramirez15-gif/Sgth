@@ -2,7 +2,7 @@
 export interface Parametro {
   clave: string;
   etiqueta: string;
-  grupo: 'Empresa y actas' | 'Dotación' | 'Alertas' | 'Seguridad' | 'Archivos';
+  grupo: 'Empresa y actas' | 'Certificados laborales' | 'Dotación' | 'Alertas' | 'Seguridad' | 'Archivos';
   tipo: 'texto' | 'numero' | 'dinero';
   minimo?: number;
   maximo?: number;
@@ -19,6 +19,10 @@ export const PARAMETROS: Parametro[] = [
   { clave: 'url_sistema', etiqueta: 'Dirección del sistema en la red', grupo: 'Empresa y actas', tipo: 'texto', maximo: 200, formato: 'url', editable: true, ayuda: 'La que escriben los demás equipos para abrir el SGTH, por ejemplo http://192.168.1.20:3000. Va en el QR de los stickers' },
   { clave: 'prefijo_placa', etiqueta: 'Prefijo de las placas de inventario', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que las placas ya pegadas no se repitan: DD-EQ-0001, DD-MU-0001' },
   { clave: 'prefijo_acta', etiqueta: 'Prefijo del consecutivo de actas', grupo: 'Empresa y actas', tipo: 'texto', editable: false, ayuda: 'Fijo para que los números de acta no se repitan' },
+
+  { clave: 'empresa_nit', etiqueta: 'NIT de la empresa', grupo: 'Certificados laborales', tipo: 'texto', maximo: 30, editable: true, ayuda: 'Como debe salir en el certificado, por ejemplo 900.123.456-7' },
+  { clave: 'certificado_firmante_nombre', etiqueta: 'Nombre de quien firma', grupo: 'Certificados laborales', tipo: 'texto', maximo: 150, editable: true, ayuda: 'Nombre completo de la directora financiera' },
+  { clave: 'certificado_firmante_cargo', etiqueta: 'Cargo de quien firma', grupo: 'Certificados laborales', tipo: 'texto', maximo: 100, editable: true },
 
   { clave: 'smmlv_valor', etiqueta: 'Salario mínimo vigente', grupo: 'Dotación', tipo: 'dinero', minimo: 1, maximo: 100_000_000, editable: true, ayuda: 'Valor del decreto del Gobierno para el año indicado abajo. Sin este valor no se calcula el derecho a dotación' },
   { clave: 'smmlv_anio', etiqueta: 'Año del salario mínimo', grupo: 'Dotación', tipo: 'numero', minimo: 2020, maximo: 2100, editable: true },

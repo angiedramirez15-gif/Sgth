@@ -3,15 +3,29 @@ import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import type { UsuarioToken } from '../common/tipos.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { DatabaseService } from '../database/database.service.js';
+import { CertificadosService } from '../certificados/certificados.service.js';
+import { CAMPOS_CERTIFICADO } from '../certificados/textos-certificado.js';
 import type { PlantillaDto } from './dto/plantilla.dto.js';
 import { type LineaPdf, PdfActaService } from './pdf-acta.service.js';
 import { CAMPOS_PLANTILLA, NOMBRE_PLANTILLA, type Plantilla, rellenar } from './textos.js';
 
-export const PLANTILLAS: Plantilla[] = ['DOTACION', 'EPP', 'EQUIPOS', 'MUEBLES', 'OTROS', 'DEVOLUCION'];
+/** Las plantillas de actas y la del certificado laboral, que se edita en la misma pantalla. */
+export type TipoPlantilla = Plantilla | 'CERTIFICADO';
+export const PLANTILLAS: TipoPlantilla[] = ['DOTACION', 'EPP', 'EQUIPOS', 'MUEBLES', 'OTROS', 'DEVOLUCION', 'CERTIFICADO'];
+const NOMBRE: Record<TipoPlantilla, string> = { ...NOMBRE_PLANTILLA, CERTIFICADO: 'Certificado laboral' };
+
+/** Campos {{…}} válidos en cada plantilla. */
+function camposDe(plantilla: TipoPlantilla) {
+  return plantilla === 'CERTIFICADO' ? CAMPOS_CERTIFICADO : CAMPOS_PLANTILLA.filter((c) => !c.solo || c.solo.includes(plantilla));
+}
+
+/** Cuántos documentos (actas o certificados) se hicieron con cada versión. */
+const USOS = (alias: string) => `((SELECT COUNT(*) FROM actas a WHERE a.plantilla_id = ${alias}.id)
+  + (SELECT COUNT(*) FROM certificados_laborales k WHERE k.plantilla_id = ${alias}.id))`;
 
 interface FilaPlantilla {
   id: number;
-  plantilla: Plantilla;
+  plantilla: TipoPlantilla;
   version: number;
   titulo: string;
   texto_introduccion: string;
@@ -30,21 +44,22 @@ export class PlantillasService {
     private readonly auditoria: AuditoriaService,
     private readonly config: ConfiguracionService,
     private readonly pdf: PdfActaService,
+    private readonly certificados: CertificadosService,
   ) {}
 
   async listar() {
-    const filas = await this.db.consultar<{ plantilla: Plantilla; version: number; creado_en: string; creado_por: string | null; versiones: number; actas: number }>(
+    const filas = await this.db.consultar<{ plantilla: TipoPlantilla; version: number; creado_en: string; creado_por: string | null; versiones: number; actas: number }>(
       `SELECT p.plantilla, p.version, DATE_FORMAT(p.creado_en, '%Y-%m-%d %H:%i') AS creado_en, u.nombre_completo AS creado_por,
               (SELECT COUNT(*) FROM plantillas_acta x WHERE x.plantilla = p.plantilla) AS versiones,
-              (SELECT COUNT(*) FROM actas a JOIN plantillas_acta x ON x.id = a.plantilla_id WHERE x.plantilla = p.plantilla) AS actas
+              (SELECT SUM(${USOS('x')}) FROM plantillas_acta x WHERE x.plantilla = p.plantilla) AS actas
          FROM plantillas_acta p LEFT JOIN usuarios u ON u.id = p.creado_por
         WHERE p.vigente = 1`,
     );
-    return PLANTILLAS.map((p) => {
+    return PLANTILLAS.filter((p) => p !== 'CERTIFICADO' || filas.some((x) => x.plantilla === p)).map((p) => {
       const f = filas.find((x) => x.plantilla === p);
       return {
         plantilla: p,
-        nombre: NOMBRE_PLANTILLA[p],
+        nombre: NOMBRE[p],
         version: f?.version ?? null,
         actualizada: f?.creado_en ?? null,
         actualizadaPor: f?.creado_por ?? null,
@@ -54,11 +69,11 @@ export class PlantillasService {
     });
   }
 
-  async versiones(plantilla: Plantilla) {
+  async versiones(plantilla: TipoPlantilla) {
     this.validarTipo(plantilla);
     return (await this.db.consultar<{ id: number; version: number; vigente: number; creado_en: string; creado_por: string | null; actas: number }>(
       `SELECT p.id, p.version, p.vigente, DATE_FORMAT(p.creado_en, '%Y-%m-%d %H:%i') AS creado_en, u.nombre_completo AS creado_por,
-              (SELECT COUNT(*) FROM actas a WHERE a.plantilla_id = p.id) AS actas
+              ${USOS('p')} AS actas
          FROM plantillas_acta p LEFT JOIN usuarios u ON u.id = p.creado_por
         WHERE p.plantilla = ? ORDER BY p.version DESC`,
       [plantilla],
@@ -66,7 +81,7 @@ export class PlantillasService {
   }
 
   /** Una versión concreta; sin id, la vigente. */
-  async obtener(plantilla: Plantilla, id?: number) {
+  async obtener(plantilla: TipoPlantilla, id?: number) {
     this.validarTipo(plantilla);
     const f = await this.db.uno<FilaPlantilla>(
       `SELECT p.*, DATE_FORMAT(p.creado_en, '%Y-%m-%d %H:%i') AS creado_en, u.nombre_completo AS creado_por
@@ -78,7 +93,7 @@ export class PlantillasService {
     return {
       id: f.id,
       plantilla: f.plantilla,
-      nombre: NOMBRE_PLANTILLA[f.plantilla],
+      nombre: NOMBRE[f.plantilla],
       version: f.version,
       vigente: !!f.vigente,
       titulo: f.titulo,
@@ -87,12 +102,12 @@ export class PlantillasService {
       clausulas: JSON.parse(f.clausulas) as string[],
       creadoEn: f.creado_en,
       creadoPor: f.creado_por,
-      campos: CAMPOS_PLANTILLA.filter((c) => !c.solo || c.solo.includes(f.plantilla)),
+      campos: camposDe(f.plantilla),
     };
   }
 
   /** Guarda los textos como versión nueva y la deja vigente. */
-  async guardar(plantilla: Plantilla, dto: PlantillaDto, u: UsuarioToken, ip?: string) {
+  async guardar(plantilla: TipoPlantilla, dto: PlantillaDto, u: UsuarioToken, ip?: string) {
     this.validarTipo(plantilla);
     this.validarCampos(plantilla, dto);
     const id = await this.db.transaccion(async (cx) => {
@@ -119,9 +134,26 @@ export class PlantillasService {
   }
 
   /** PDF de ejemplo con los textos enviados (sin guardar) y datos ficticios. */
-  async vistaPrevia(plantilla: Plantilla, dto: PlantillaDto): Promise<Buffer> {
+  async vistaPrevia(plantilla: TipoPlantilla, dto: PlantillaDto): Promise<Buffer> {
     this.validarTipo(plantilla);
     this.validarCampos(plantilla, dto);
+    if (plantilla === 'CERTIFICADO') {
+      return this.certificados.armarPdf({
+        consecutivo: 'CER-0000-0000',
+        datos: {
+          sexo: 'F', nombre: 'Nombre De Ejemplo', tipoDoc: 'CC', numeroDoc: '1000000000', cargo: 'Cargo de ejemplo',
+          tipoContrato: 'INDEFINIDO', fechaIngreso: '2024-03-04', fechaFinContrato: null, fechaRetiro: null, salario: 2_500_000,
+        },
+        fecha: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }),
+        dirigidoA: null,
+        firmante: {
+          nombre: (await this.config.texto('certificado_firmante_nombre', '')) || 'Nombre de quien firma',
+          cargo: (await this.config.texto('certificado_firmante_cargo', '')) || 'Directora Financiera',
+        },
+        titulo: dto.titulo, introduccion: dto.textoIntroduccion, manifiesta: dto.textoManifiesta, clausulas: dto.clausulas,
+        nota: 'Vista previa con datos de ejemplo. No es un certificado real.',
+      });
+    }
     const empresa = await this.config.texto('empresa_nombre', 'DRIM DUIT S.A.S.');
     const ciudad = await this.config.texto('ciudad_actas', 'Palmira');
     const pie = (await this.config.texto('pie_actas', '')).split(/\s*\|\s*|\n/).map((r) => r.trim()).filter(Boolean);
@@ -163,17 +195,17 @@ export class PlantillasService {
     });
   }
 
-  private validarTipo(plantilla: string): asserts plantilla is Plantilla {
-    if (!PLANTILLAS.includes(plantilla as Plantilla)) throw new BadRequestException('Tipo de plantilla no válido');
+  private validarTipo(plantilla: string): asserts plantilla is TipoPlantilla {
+    if (!PLANTILLAS.includes(plantilla as TipoPlantilla)) throw new BadRequestException('Tipo de plantilla no válido');
   }
 
   /** Avisa de campos {{…}} mal escritos o que no aplican a este tipo de acta. */
-  private validarCampos(plantilla: Plantilla, dto: PlantillaDto) {
-    const validos = new Set(CAMPOS_PLANTILLA.filter((c) => !c.solo || c.solo.includes(plantilla)).map((c) => c.campo));
+  private validarCampos(plantilla: TipoPlantilla, dto: PlantillaDto) {
+    const validos = new Set(camposDe(plantilla).map((c) => c.campo));
     const todos = [dto.titulo, dto.textoIntroduccion, dto.textoManifiesta, ...dto.clausulas].join('\n');
     const malos = [...new Set([...todos.matchAll(/\{\{\s*([^}]*?)\s*\}\}/g)].map((m) => m[1]))].filter((c) => !validos.has(c));
     if (malos.length) {
-      throw new BadRequestException(`Estos campos no existen o no aplican a esta acta: ${malos.map((m) => `{{${m}}}`).join(', ')}`);
+      throw new BadRequestException(`Estos campos no existen o no aplican a esta plantilla: ${malos.map((m) => `{{${m}}}`).join(', ')}`);
     }
     const sueltas = todos.replace(/\{\{[A-Z_]+\}\}/g, '');
     if (/\{\{|\}\}/.test(sueltas)) throw new BadRequestException('Hay llaves {{ }} sin cerrar o con espacios. Escriba los campos como {{NOMBRE}}');

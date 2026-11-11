@@ -11,7 +11,7 @@ formato corporativo.
 | Base de datos | MariaDB (administrada con HeidiSQL) | `database/` |
 | Documentación | Especificación, diagramas | `docs/` |
 
-La especificación completa está en `docs/SGTH_Documentacion_v1.6.docx`.
+La especificación completa está en `docs/SGTH_Documentacion_v1.7.docx`.
 
 ---
 
@@ -34,7 +34,7 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql` y `008_planillas_epp.sql`).
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql`, `008_planillas_epp.sql`, `009_alertas_descarte.sql` y `010_certificados_laborales.sql`).
 Se ejecutan conectado como **root** (sgth_app no puede cambiar tablas) y se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
@@ -112,6 +112,20 @@ Con el usuario `admin`, en el menú **Administración**:
     en **Matriz por cargo** marque qué EPP exige cada cargo. La pestaña **Por reponer** muestra lo vencido,
     lo que vence pronto y lo que el cargo exige y nunca se entregó. Al entregar un EPP, el anterior del mismo
     tipo queda como repuesto. **Entrega grupal** genera una sola planilla donde firman todas las personas.
+12. **Alertas**: el sistema revisa al encender y cada hora los documentos vencidos o por vencer, contratos por
+    terminar, EPP por reponer, dotación pendiente del período, actas sin la firmada y retirados con elementos
+    sin devolver. El número junto a **Alertas** en el menú y la sección **Pendientes** del Inicio muestran
+    cuántas hay. Cada alerta se quita sola cuando se soluciona la causa; si no aplica, se puede **descartar**
+    escribiendo el motivo (queda en el historial quién y por qué, y se puede reactivar). Los días de
+    anticipación se ajustan en **Configuración**. La dotación pendiente necesita el **salario mínimo** vigente.
+13. **Reportes**: listados en Excel de colaboradores, documentos, entregas de dotación y EPP, existencias,
+    equipos y muebles, y actas. Cada rol ve solo los reportes de su área; el salario sale solo si el rol puede
+    ver datos sensibles.
+14. **Certificados laborales**: en **Configuración › Certificados laborales** registre el NIT, el nombre y el
+    cargo de quien firma, y suba la imagen de la firma. Luego, en la ficha del colaborador, **Certificado laboral**
+    genera el PDF (con o sin salario, y dirigido a una entidad o "A quien interese"). Cada certificado queda con
+    número CER-AAAA-NNNN en la pestaña **Certificados**. Para retirados dice "laboró desde … hasta …". El texto
+    se edita en **Plantillas de actas › Certificado laboral**.
 
 ## 6. Problemas comunes
 
@@ -145,6 +159,11 @@ sgth/
 │       ├── database/       conexión mysql2 y transacciones
 │       ├── auditoria/      registro de cambios
 │       ├── configuracion/  parámetros de la tabla configuracion
+│       ├── inventario/     dotación, EPP, equipos y muebles, stickers
+│       ├── actas/          actas, plantillas, PDF, matriz y planillas de EPP
+│       ├── alertas/        cálculo y gestión de alertas
+│       ├── certificados/   certificados laborales
+│       ├── reportes/       reportes en Excel
 │       └── salud/          GET /api/salud
 ├── frontend/           Angular
 │   ├── public/marca/       logo e isotipo de DRIM DUIT

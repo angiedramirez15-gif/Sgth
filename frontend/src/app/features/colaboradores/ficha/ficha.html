@@ -34,6 +34,7 @@
       </div>
       @if (puedeGestionar) {
         <div class="cabecera__acciones">
+          <button mat-stroked-button type="button" (click)="certificado()"><mat-icon>description</mat-icon>Certificado laboral</button>
           @if (f.estado === 'ACTIVO') {
             <a mat-flat-button [routerLink]="['/colaboradores', f.id, 'editar']"><mat-icon>edit</mat-icon>Editar</a>
           }
@@ -93,6 +94,15 @@
           <ng-template matTabContent>
             <div class="pestana">
               <app-entregas-colaborador [colaboradorId]="f.id" [retirado]="f.estado === 'RETIRADO'" (total)="totalACargo.set($event)" />
+            </div>
+          </ng-template>
+        </mat-tab>
+      }
+      @if (puedeGestionar) {
+        <mat-tab label="Certificados">
+          <ng-template matTabContent>
+            <div class="pestana">
+              <app-certificados-colaborador [colaboradorId]="f.id" [version]="versionCertificados()" (generar)="certificado()" />
             </div>
           </ng-template>
         </mat-tab>

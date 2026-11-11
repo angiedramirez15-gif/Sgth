@@ -137,3 +137,13 @@
   .lateral { grid-template-columns: 1fr; }
   .hoja { padding: 18px 16px; }
 }
+
+.nota-certificado {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--sgth-tinta-suave);
+  mat-icon { flex: none; font-size: 18px; width: 18px; height: 18px; color: var(--sgth-petroleo); }
+}

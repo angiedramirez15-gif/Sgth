@@ -48,6 +48,19 @@ export interface DatosPdf {
   anulada?: string | null;
 }
 
+export interface DatosCertificadoPdf {
+  consecutivo: string;
+  titulo: string;
+  dirigidoA: string | null; // null = A QUIEN INTERESE
+  introduccion: string;
+  manifiesta: string;
+  parrafos: string[];
+  firmante: { nombre: string; cargo: string; empresa: string };
+  firma: Buffer | null; // imagen PNG o JPG
+  pie: string[];
+  nota?: string | null;
+}
+
 export interface DatosPlanilla {
   consecutivo: string;
   ciudad: string;
@@ -255,6 +268,86 @@ export class PdfActaService {
       doc.switchToPage(paginas.start + i);
       this.encabezado(doc, x0, ancho);
       this.pie(doc, d.pie, x0, ancho, i + 1, paginas.count, d.consecutivo);
+    }
+    doc.end();
+    return fin;
+  }
+
+  /** Certificado laboral: una hoja carta con el mismo encabezado y pie de las actas, y la firma escaneada. */
+  async generarCertificado(d: DatosCertificadoPdf): Promise<Buffer> {
+    const margenX = 72;
+    const margenSup = 104;
+    const doc = new PDFDocument({
+      size: 'LETTER',
+      margins: { top: margenSup, bottom: 84, left: margenX, right: margenX },
+      bufferPages: true,
+      info: { Title: `${d.titulo} ${d.consecutivo}`, Author: 'SGTH - DRIM DUIT S.A.S.', Subject: d.consecutivo },
+    });
+    const partes: Buffer[] = [];
+    doc.on('data', (p: Buffer) => partes.push(p));
+    const fin = new Promise<Buffer>((ok, error) => {
+      doc.on('end', () => ok(Buffer.concat(partes)));
+      doc.on('error', error);
+    });
+    const ancho = doc.page.width - margenX * 2;
+    const x0 = margenX;
+
+    doc.font('Helvetica').fontSize(8.5).fillColor(GRIS).text(`No. ${d.consecutivo}`, x0, margenSup - 18, { width: ancho, align: 'right' });
+    doc.fillColor(TINTA);
+
+    // --- Título ---
+    doc.font('Helvetica-Bold').fontSize(14).text(d.titulo, x0, margenSup + 22, { width: ancho, align: 'center', characterSpacing: 0.5 });
+    doc.moveDown(2);
+
+    // --- Destinatario ---
+    if (d.dirigidoA) {
+      doc.font('Helvetica').fontSize(11).text('Señores:', x0, doc.y, { width: ancho });
+      doc.font('Helvetica-Bold').text(d.dirigidoA.toUpperCase(), { width: ancho });
+    } else {
+      doc.font('Helvetica-Bold').fontSize(11).text('A QUIEN INTERESE', x0, doc.y, { width: ancho });
+    }
+    doc.moveDown(2);
+
+    // --- Texto ---
+    const opciones = { width: ancho, align: 'justify' as const, lineGap: 4 };
+    doc.font('Helvetica').fontSize(11.5).text(d.introduccion, x0, doc.y, opciones);
+    doc.moveDown(1.5);
+    doc.font('Helvetica-Bold').fontSize(12).text(d.manifiesta, x0, doc.y, { width: ancho, align: 'center' });
+    doc.moveDown(1.5);
+    doc.font('Helvetica').fontSize(11.5);
+    for (const p of d.parrafos) {
+      doc.text(p, x0, doc.y, opciones);
+      doc.moveDown(1.1);
+    }
+
+    if (d.nota) {
+      doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(GRIS).text(d.nota, x0, doc.y, { width: ancho });
+      doc.fillColor(TINTA);
+    }
+
+    // --- Firma: imagen sobre la línea ---
+    doc.moveDown(1.5);
+    this.asegurarEspacio(doc, 150);
+    doc.font('Helvetica').fontSize(11.5).text('Atentamente,', x0, doc.y);
+    const yLinea = doc.y + 78;
+    const anchoFirma = 220;
+    if (d.firma) {
+      try {
+        doc.image(d.firma, x0, yLinea - 70, { fit: [anchoFirma - 20, 66], valign: 'bottom' });
+      } catch {
+        // imagen dañada: queda la línea para firmar a mano
+      }
+    }
+    doc.moveTo(x0, yLinea).lineTo(x0 + anchoFirma, yLinea).lineWidth(0.7).strokeColor(TINTA).stroke();
+    doc.font('Helvetica-Bold').fontSize(11).text(d.firmante.nombre.toUpperCase(), x0, yLinea + 6, { width: ancho });
+    doc.font('Helvetica').fontSize(10.5).text(d.firmante.cargo, x0, doc.y, { width: ancho });
+    doc.text(d.firmante.empresa, x0, doc.y, { width: ancho });
+
+    const paginas = doc.bufferedPageRange();
+    for (let i = 0; i < paginas.count; i++) {
+      doc.switchToPage(paginas.start + i);
+      this.encabezado(doc, x0 - 10, ancho + 20);
+      this.pie(doc, d.pie, x0 - 10, ancho + 20, i + 1, paginas.count, d.consecutivo);
     }
     doc.end();
     return fin;

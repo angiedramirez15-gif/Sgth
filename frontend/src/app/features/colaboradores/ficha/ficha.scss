@@ -63,7 +63,7 @@
 
 .cabecera__retiro { margin: 6px 0 0; font-size: 0.875rem; color: var(--sgth-tinta-suave); }
 
-.cabecera__acciones { display: flex; align-items: center; gap: 4px; align-self: start; }
+.cabecera__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; align-self: start; }
 
 // --- Pestañas ---
 .pestanas { margin-top: 20px; }
