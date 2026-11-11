@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,7 +23,9 @@ export interface DatosCertificadoDialogo { colaboradorId: number; nombre: string
   template: `
     <h2 mat-dialog-title>Certificado laboral</h2>
     <mat-dialog-content>
-      @if (!estado()) {
+      @if (fallo()) {
+        <p class="error" role="alert">{{ fallo() }}</p>
+      } @else if (!estado()) {
         <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
       } @else if (estado()!.faltantes.length) {
         <p class="aviso" role="alert">
@@ -67,7 +70,7 @@ export interface DatosCertificadoDialogo { colaboradorId: number; nombre: string
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close type="button">Cancelar</button>
-      <button mat-flat-button type="button" (click)="generar()" [disabled]="!estado() || estado()!.faltantes.length > 0 || generando()">
+      <button mat-flat-button type="button" (click)="generar()" [disabled]="!!fallo() || !estado() || estado()!.faltantes.length > 0 || generando()">
         <mat-icon>description</mat-icon>{{ generando() ? 'Generando…' : 'Generar certificado' }}
       </button>
     </mat-dialog-actions>
@@ -98,6 +101,8 @@ export class CertificadoDialogo implements OnInit {
   protected readonly estado = signal<EstadoCertificado | null>(null);
   protected readonly generando = signal(false);
   protected readonly error = signal('');
+  /** No se pudo consultar si se puede expedir: no se muestra el formulario. */
+  protected readonly fallo = signal('');
   protected conSalario = false;
   protected dirigidoA = '';
 
@@ -107,8 +112,9 @@ export class CertificadoDialogo implements OnInit {
     try {
       this.estado.set(await this.api.estado(this.d.colaboradorId));
     } catch (e) {
-      this.estado.set({ faltantes: [], tieneSalario: false, puedeConSalario: false, retirado: false, firmante: { nombre: '', cargo: '' } });
-      this.error.set(mensajeDeError(e));
+      this.fallo.set(e instanceof HttpErrorResponse && e.status === 404
+        ? 'El servidor del SGTH todavía no tiene los certificados. Hay que reiniciar el backend con la versión nueva.'
+        : mensajeDeError(e, 'No se pudo consultar los datos del certificado'));
     }
   }
 
