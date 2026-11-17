@@ -1,0 +1,91 @@
+<div class="sgth-pagina">
+  <header class="sgth-encabezado">
+    <div>
+      <h1>Auditoría</h1>
+      <p>Quién hizo qué y cuándo en el sistema: ingresos, cambios, descargas y consultas de datos sensibles. Solo consulta; nadie puede modificar este registro.</p>
+    </div>
+  </header>
+
+  <form class="filtros" (ngSubmit)="buscar(1)">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Desde</mat-label>
+      <input matInput type="date" name="desde" [(ngModel)]="filtro.desde">
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Hasta</mat-label>
+      <input matInput type="date" name="hasta" [(ngModel)]="filtro.hasta">
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Usuario</mat-label>
+      <mat-select name="usuario" [(ngModel)]="filtro.usuarioId">
+        <mat-option value="">Todos</mat-option>
+        @for (u of usuarios(); track u.id) { <mat-option [value]="u.id">{{ u.nombre }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Acción</mat-label>
+      <mat-select name="accion" [(ngModel)]="filtro.accion">
+        <mat-option value="">Todas</mat-option>
+        @for (a of acciones(); track a.valor) { <mat-option [value]="a.valor">{{ a.nombre }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Módulo</mat-label>
+      <mat-select name="modulo" [(ngModel)]="filtro.modulo">
+        <mat-option value="">Todos</mat-option>
+        @for (m of modulos(); track m.valor) { <mat-option [value]="m.valor">{{ m.nombre }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <div class="filtros__botones">
+      <button mat-flat-button type="submit"><mat-icon>search</mat-icon>Buscar</button>
+      <button mat-button type="button" (click)="limpiar()">Limpiar</button>
+    </div>
+  </form>
+
+  @if (cargando()) { <mat-progress-bar mode="indeterminate" aria-label="Cargando auditoría" /> }
+
+  <p class="conteo" aria-live="polite">{{ total() }} {{ total() === 1 ? 'registro' : 'registros' }}</p>
+
+  @if (filas().length) {
+    <div class="sgth-marco">
+      <table class="sgth-tabla">
+        <thead>
+          <tr><th scope="col">Fecha y hora</th><th scope="col">Usuario</th><th scope="col">Acción</th><th scope="col">Módulo</th><th scope="col">Detalle</th><th scope="col">Equipo (IP)</th></tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.id) {
+            <tr [class.fallido]="f.accion === 'LOGIN_FALLIDO'">
+              <td class="nowrap">{{ f.fecha }}</td>
+              <td>{{ f.usuario ?? '(usuario desconocido)' }}</td>
+              <td class="nowrap">{{ f.accionNombre }}</td>
+              <td>{{ f.modulo }}@if (f.registroId) { <span class="secundario">Registro #{{ f.registroId }}</span> }</td>
+              <td class="detalle">
+                @if (f.antes || f.despues) {
+                  <button type="button" class="ver" (click)="abierta.set(abierta() === f.id ? null : f.id)" [attr.aria-expanded]="abierta() === f.id">
+                    <mat-icon>{{ abierta() === f.id ? 'expand_less' : 'expand_more' }}</mat-icon>{{ resumen(f) || 'Ver detalle' }}
+                  </button>
+                  @if (abierta() === f.id) {
+                    <div class="json">
+                      @if (f.antes) { <div><strong>Antes</strong><pre>{{ json(f.antes) }}</pre></div> }
+                      @if (f.despues) { <div><strong>{{ f.antes ? 'Después' : 'Datos' }}</strong><pre>{{ json(f.despues) }}</pre></div> }
+                    </div>
+                  }
+                }
+              </td>
+              <td class="nowrap ip">{{ f.ip ?? '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (paginas() > 1) {
+      <nav class="paginas" aria-label="Páginas">
+        <button mat-button type="button" (click)="buscar(pagina() - 1)" [disabled]="pagina() <= 1"><mat-icon>chevron_left</mat-icon>Anterior</button>
+        <span>Página {{ pagina() }} de {{ paginas() }}</span>
+        <button mat-button type="button" (click)="buscar(pagina() + 1)" [disabled]="pagina() >= paginas()">Siguiente<mat-icon iconPositionEnd>chevron_right</mat-icon></button>
+      </nav>
+    }
+  } @else if (!cargando()) {
+    <p class="sgth-vacio">No hay registros con esos filtros.</p>
+  }
+</div>

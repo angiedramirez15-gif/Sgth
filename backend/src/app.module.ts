@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuditoriaController } from './auditoria/auditoria.controller.js';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -47,7 +48,7 @@ if (!servirFrontend.length) {
     ReportesModule,
     ...servirFrontend,
   ],
-  controllers: [SaludController, ConfiguracionController],
+  controllers: [SaludController, ConfiguracionController, AuditoriaController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

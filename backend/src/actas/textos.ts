@@ -50,6 +50,17 @@ export const PERMISO_ACTA: Record<Plantilla, string> = {
   DEVOLUCION: 'actas_activos.gestionar',
 };
 
+/**
+ * Tipos de acta que un usuario puede consultar: todas con actas.ver; si no, las que puede
+ * registrar, y las de EPP con actas_epp.ver (rol SST). null = todas.
+ */
+export function plantillasVisibles(permisos: string[]): Plantilla[] | null {
+  if (permisos.includes('actas.ver')) return null;
+  return (Object.keys(PERMISO_ACTA) as Plantilla[]).filter(
+    (p) => permisos.includes(PERMISO_ACTA[p]) || (p === 'EPP' && permisos.includes('actas_epp.ver')),
+  );
+}
+
 export const NOMBRE_PLANTILLA: Record<Plantilla, string> = {
   DOTACION: 'Dotación',
   EPP: 'EPP',

@@ -30,7 +30,7 @@ const REPORTES: Reporte[] = [
   { clave: 'epp', titulo: 'Entregas de EPP', icono: 'health_and_safety', descripcion: 'Una fila por EPP entregado, con la fecha de reposición y si ya se repuso.', permisos: ['inventario_epp.ver', 'inventario_epp.gestionar', 'actas_epp.gestionar'], filtros: ['rango', 'cargo'] },
   { clave: 'existencias', titulo: 'Existencias de inventario', icono: 'inventory_2', descripcion: 'Stock por elemento y talla, y unidades de equipos y muebles por estado.', permisos: ['inventario_dotacion.ver', 'inventario_epp.ver', 'inventario_activos.ver', 'inventario_dotacion.gestionar', 'inventario_epp.gestionar', 'inventario_activos.gestionar'], filtros: [] },
   { clave: 'activos', titulo: 'Equipos y muebles', icono: 'devices', descripcion: 'Cada activo con su placa, serial, estado y a quién está asignado.', permisos: ['inventario_activos.ver', 'inventario_activos.gestionar'], filtros: [] },
-  { clave: 'actas', titulo: 'Actas', icono: 'description', descripcion: 'Actas de entrega y devolución, con su estado y lo que incluye cada una.', permisos: ['actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar'], filtros: ['rango', 'tipoActa', 'estadoActa'] },
+  { clave: 'actas', titulo: 'Actas', icono: 'description', descripcion: 'Actas de entrega y devolución, con su estado y lo que incluye cada una.', permisos: ['actas.ver', 'actas_epp.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar'], filtros: ['rango', 'tipoActa', 'estadoActa'] },
 ];
 
 interface Valores { estado: string; desde: string; hasta: string; cargoId: number | null; plantilla: string; estadoActa: string }

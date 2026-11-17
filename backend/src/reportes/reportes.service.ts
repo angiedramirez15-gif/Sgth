@@ -1,3 +1,4 @@
+import { plantillasVisibles } from '../actas/textos.js';
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { MOTIVOS, type Motivo } from '../actas/textos.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
@@ -349,9 +350,11 @@ export class ReportesService {
 
   // ---------- RF-66 Actas ----------
   private async actas(f: Filtros, u: UsuarioToken) {
-    this.exigir(u, 'actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar');
+    this.exigir(u, 'actas.ver', 'actas_epp.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar');
     const params: unknown[] = [];
     let donde = 'WHERE 1 = 1';
+    const visibles = plantillasVisibles(u.permisos);
+    if (visibles) { donde += ' AND p.plantilla IN (?)'; params.push(visibles.length ? visibles : ['-']); }
     donde += this.rango(f, 'a.fecha', params);
     if (f.plantilla && PLANTILLA[f.plantilla]) { donde += ' AND p.plantilla = ?'; params.push(f.plantilla); }
     if (f.estado && ESTADO_ACTA[f.estado]) { donde += ' AND a.estado = ?'; params.push(f.estado); }

@@ -1,0 +1,37 @@
+# =====================================================================
+#  SGTH - .env de PRODUCCIÓN (C:\SGTH\app\backend\.env)
+#  El script 2-instalar-o-actualizar.ps1 lo crea la primera vez y copia
+#  las claves del .env de desarrollo. NUNCA se sube a GitHub.
+# =====================================================================
+
+NODE_ENV=production
+PORT=443
+HTTP_REDIRECCION_PUERTO=80
+
+# --- Base de datos en uso ---
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=sgth
+DB_USER=sgth_app
+DB_PASSWORD=
+
+# --- Sesión (debe ser EL MISMO valor que se usó hasta ahora: protege la doble verificación) ---
+JWT_SECRETO=
+
+# --- Carpetas ---
+FRONTEND_DIST=C:\SGTH\app\frontend
+ARCHIVOS_DIR=C:\SGTH\archivos
+
+# --- HTTPS (lo completa 4-certificado.ps1) ---
+HTTPS_CERT=
+HTTPS_KEY=
+
+# --- Respaldo diario cifrado ---
+RESPALDO_DB_USUARIO=sgth_respaldo
+RESPALDO_DB_CLAVE=
+# Clave de cifrado de los respaldos. Guárdela TAMBIÉN fuera del portátil: sin ella no se pueden restaurar.
+RESPALDO_CLAVE=
+# Carpeta de OneDrive de la empresa (se sincroniza a la nube)
+RESPALDO_DESTINO=
+RESPALDO_LOCAL=C:\SGTH\respaldos
+RESPALDO_ESTADO=C:\SGTH\logs\ultimo_respaldo.json

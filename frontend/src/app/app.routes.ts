@@ -7,6 +7,7 @@ import { MENU_ADMINISTRACION, MENU_PRINCIPAL } from './core/menu';
 const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
   colaboradores: () => import('./features/colaboradores/listado/listado').then((c) => c.Listado),
   'administracion/usuarios': () => import('./features/administracion/usuarios/usuarios').then((c) => c.Usuarios),
+  'administracion/auditoria': () => import('./features/administracion/auditoria/auditoria').then((c) => c.Auditoria),
   'administracion/catalogos': () => import('./features/administracion/catalogos/catalogos').then((c) => c.Catalogos),
   dotacion: () => import('./features/inventario/dotacion/dotacion').then((c) => c.Dotacion),
   actas: () => import('./features/actas/listado/listado-actas').then((c) => c.ListadoActas),
@@ -44,7 +45,7 @@ const actas: Routes = [
     loadComponent: () => import('./features/actas/antigua/antigua').then((c) => c.Antigua) },
   { path: 'actas/devolucion', title: 'Registrar devolución · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas_activos.gestionar'] },
     loadComponent: () => import('./features/actas/devolucion/devolucion').then((c) => c.Devolucion) },
-  { path: 'actas/:id', title: 'Acta · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar'] },
+  { path: 'actas/:id', title: 'Acta · SGTH', canActivate: [requierePermiso], data: { titulo: 'Actas', permisos: ['actas.ver', 'actas_epp.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar'] },
     loadComponent: () => import('./features/actas/detalle/detalle').then((c) => c.DetalleActa) },
 ];
 

@@ -11,7 +11,7 @@ formato corporativo.
 | Base de datos | MariaDB (administrada con HeidiSQL) | `database/` |
 | Documentación | Especificación, diagramas | `docs/` |
 
-La especificación completa está en `docs/SGTH_Documentacion_v1.7.docx`.
+La especificación completa está en `docs/SGTH_Documentacion_v1.9.docx`.
 
 ---
 
@@ -34,7 +34,7 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql`, `008_planillas_epp.sql`, `009_alertas_descarte.sql` y `010_certificados_laborales.sql`).
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql`, `008_planillas_epp.sql`, `009_alertas_descarte.sql`, `010_certificados_laborales.sql`, `011_seguridad_habeas_data.sql` y `012_base_pruebas_y_respaldo.sql`).
 Se ejecutan conectado como **root** (sgth_app no puede cambiar tablas) y se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
@@ -126,6 +126,19 @@ Con el usuario `admin`, en el menú **Administración**:
     genera el PDF (con o sin salario, y dirigido a una entidad o "A quien interese"). Cada certificado queda con
     número CER-AAAA-NNNN en la pestaña **Certificados**. Para retirados dice "laboró desde … hasta …". El texto
     se edita en **Plantillas de actas › Certificado laboral**.
+15. **Auditoría** (Administración): quién hizo qué y cuándo (ingresos, cambios, descargas y consultas de datos
+    sensibles), con filtros por fechas, usuario, acción y módulo. Solo consulta.
+
+### Qué ve cada rol
+
+| Rol | Ve y gestiona | No ve |
+|---|---|---|
+| Administrador | Todo | — |
+| Talento Humano | Colaboradores (con salarios y datos sensibles), dotación, EPP, equipos y muebles, todas las actas, certificados, alertas (incluidas las de SST), reportes, catálogos y auditoría | Usuarios, Configuración y editar plantillas de actas |
+| SST | Colaboradores (sin salario ni datos sensibles), documentos de SST, inventario de EPP, matriz y planillas de EPP, solo las actas de EPP, alertas de SST y reportes de su área | Dotación, equipos y muebles, actas que no sean de EPP, plantillas, administración |
+
+Los permisos de una base existente se ajustan con `database/cambios/013_permisos_th_sst.sql` (como root).
+Las personas de Talento Humano y SST deben volver a ingresar después de ejecutarlo.
 
 ## 6. Problemas comunes
 
@@ -150,21 +163,23 @@ Con el usuario `admin`, en el menú **Administración**:
 sgth/
 ├── backend/            NestJS
 │   └── src/
-│       ├── auth/           inicio de sesión, cambio de clave, JWT
+│       ├── auth/           ingreso, doble verificación, cookie de sesión, cambio de clave
 │       ├── usuarios/       administración de usuarios y roles
 │       ├── catalogos/      áreas, cargos, entidades, proveedores…
 │       ├── colaboradores/  ficha, documentos, foto, importación desde Excel
 │       ├── archivos/       guardar y leer archivos en C:\SGTH\archivos
 │       ├── common/         permisos (@Permisos), decoradores, manejo de errores
 │       ├── database/       conexión mysql2 y transacciones
-│       ├── auditoria/      registro de cambios
+│       ├── auditoria/      registro de cambios y consulta (pantalla Auditoría)
 │       ├── configuracion/  parámetros de la tabla configuracion
 │       ├── inventario/     dotación, EPP, equipos y muebles, stickers
 │       ├── actas/          actas, plantillas, PDF, matriz y planillas de EPP
 │       ├── alertas/        cálculo y gestión de alertas
 │       ├── certificados/   certificados laborales
+│       ├── seguridad/      doble verificación, cifrado, reglas de claves, compromiso
 │       ├── reportes/       reportes en Excel
 │       └── salud/          GET /api/salud
+│   └── scripts/        respaldo.mjs y restaurar.mjs (respaldo cifrado)
 ├── frontend/           Angular
 │   ├── public/marca/       logo e isotipo de DRIM DUIT
 │   └── src/
@@ -175,10 +190,48 @@ sgth/
 │           ├── shared/     confirmaciones y mensajes
 │           └── features/   pantallas (ingreso, cambiar clave, inicio, módulos)
 ├── database/           scripts SQL en orden de ejecución
+├── despliegue/         scripts de Windows y guía de puesta en marcha (Fase 7)
 └── docs/               documentación y diagramas entidad-relación
 ```
 
-## 8. Cómo se protege cada ruta del backend
+## 8. Seguridad y protección de datos (Ley 1581 de 2012)
+
+- **Sesión:** viaja en una cookie que JavaScript no puede leer (HttpOnly, SameSite=Strict). Vence con los
+  minutos de inactividad de Configuración y dura como máximo 12 horas. Se cierra en todos los equipos al
+  inactivar el usuario, cambiar su rol o su clave, o reiniciar su doble verificación.
+- **Doble verificación:** obligatoria para los roles que ven salarios y datos sensibles (Administrador y
+  Talento Humano). El primer ingreso muestra un código QR para Google Authenticator o Microsoft Authenticator,
+  y entrega 8 códigos de respaldo. Si alguien pierde el celular, otro administrador usa **Usuarios › Reiniciar
+  doble verificación**. El menú de la cuenta permite generar códigos de respaldo nuevos.
+- **Claves:** mínimo 12 caracteres con letras y números; no se aceptan claves comunes, con el nombre o el
+  usuario, ni las últimas 5. Vencen a los 90 días (Configuración › Seguridad).
+- **Compromiso de confidencialidad:** cada usuario lo acepta en su primer ingreso; queda la fecha y el equipo.
+  Se edita en Configuración › Seguridad; cada cambio crea una versión y todos deben aceptarla otra vez.
+- **Autorización de tratamiento de datos:** es obligatoria para todos los colaboradores (catálogo de tipos de
+  documento, "Obligatorio para todos"). Si falta, aparece como faltante y genera la alerta "Sin autorización de datos".
+- **Protecciones del servidor:** cabeceras de seguridad (el navegador solo ejecuta el código del SGTH y no
+  permite mostrarlo dentro de otra página), protección contra solicitudes falsificadas (cabecera `X-SGTH`),
+  máximo 10 intentos de ingreso por minuto por equipo y 600 peticiones por minuto, respuestas sin caché.
+- **HTTPS:** el backend ya lo soporta (`HTTPS_PFX` en `.env`); se activa en la Fase 7. **No use el sistema con
+  datos reales en la red sin HTTPS.**
+- **Lo que no hace el software:** la empresa debe tener su Política de Tratamiento de Datos aprobada, el formato
+  de autorización firmado por cada colaborador y revisar si debe inscribir sus bases de datos en el RNBD de la SIC.
+
+## 9. Puesta en marcha en la red (Fase 7)
+
+La guía paso a paso está en **`despliegue/GUIA_PUESTA_EN_MARCHA.md`**. Resumen:
+
+- **Versión en uso** en `C:\SGTH\app` (base `sgth`), separada del desarrollo en `C:\Proyectos\SGTH`
+  (base `sgth_pruebas`). Se instala y actualiza con `despliegue\2-instalar-o-actualizar.ps1`.
+- **Dirección:** `https://sgth.<dominio de la empresa>`, con certificado gratuito de Let's Encrypt (win-acme +
+  acme-dns, registro CNAME en GoDaddy). Se renueva solo y el SGTH lo carga sin reiniciarse.
+- **Arranque automático:** tarea programada "SGTH - Sistema" (cuenta SYSTEM), se reinicia sola si se detiene.
+- **Respaldo diario cifrado** a las 12:30 p. m. a OneDrive de la empresa (`backend/scripts/respaldo.mjs`):
+  base de datos completa y documentos nuevos, AES-256-GCM, 30 días + 1 por mes durante 12 meses. Se restaura con
+  `backend/scripts/restaurar.mjs`. El Inicio avisa al administrador si el respaldo falla o el certificado no se renovó.
+- **Firewall:** 443 y 80 solo desde la red local; MariaDB bloqueado desde otros equipos.
+
+## 10. Cómo se protege cada ruta del backend
 
 Todas las rutas exigen sesión iniciada, salvo las marcadas con `@Publico()`.
 Para exigir un permiso:
@@ -191,7 +244,7 @@ crear(@Body() dto: CrearColaboradorDto, @UsuarioActual() u: UsuarioToken) { ... 
 
 Los códigos de permiso están en la tabla `permisos` (script 02).
 
-## 9. Flujo de trabajo con Git
+## 11. Flujo de trabajo con Git
 
 - `main`: versión estable, la que está instalada en el servidor.
 - `develop`: integración del trabajo en curso.

@@ -11,7 +11,7 @@ import type { ActaAntiguaDto, DevolucionDto, EntregaDto } from './dto/acta.dto.j
 import { type DatosPdf, type LineaPdf, PdfActaService } from './pdf-acta.service.js';
 import {
   CATEGORIA_DE_PLANTILLA, CONDICION_TEXTO, fechaCorta, fechaLarga, sumarDias, type Motivo, MOTIVOS, MOTIVOS_POR_PLANTILLA, NOMBRE_PLANTILLA,
-  PERMISO_ACTA, type Plantilla, rellenar, siglaDocumento, textoPeriodo,
+  PERMISO_ACTA, plantillasVisibles, type Plantilla, rellenar, siglaDocumento, textoPeriodo,
 } from './textos.js';
 
 interface FilaActa {
@@ -531,10 +531,16 @@ export class ActasService {
 
   async listar(u: UsuarioToken, filtros: { colaboradorId?: number } = {}): Promise<FilaListaActa[]> {
     const params: unknown[] = [];
-    let donde = '';
+    let donde = 'WHERE 1 = 1';
     if (filtros.colaboradorId) {
-      donde = 'WHERE a.colaborador_id = ?';
+      donde += ' AND a.colaborador_id = ?';
       params.push(filtros.colaboradorId);
+    }
+    const visibles = plantillasVisibles(u.permisos);
+    if (visibles) {
+      if (!visibles.length) return [];
+      donde += ' AND p.plantilla IN (?)';
+      params.push(visibles);
     }
     return (await this.db.consultar<Omit<FilaListaActa, 'esHistorica'> & { esHistorica: number }>(
       `SELECT a.id, a.consecutivo, a.tipo_acta AS tipo, p.plantilla, a.es_historica AS esHistorica,
@@ -557,7 +563,18 @@ export class ActasService {
     )).map((f) => ({ ...f, esHistorica: !!f.esHistorica, elementos: Number(f.elementos), resumen: f.resumen ?? '' }));
   }
 
-  async obtener(id: number, _u: UsuarioToken | null): Promise<Acta> {
+  /** 404 si el usuario no puede consultar ese tipo de acta (no se revela que existe). */
+  async verificarAcceso(id: number, u: UsuarioToken): Promise<void> {
+    const visibles = plantillasVisibles(u.permisos);
+    if (!visibles) return;
+    const f = await this.db.uno<{ plantilla: Plantilla }>(
+      'SELECT p.plantilla FROM actas a JOIN plantillas_acta p ON p.id = a.plantilla_id WHERE a.id = ?', [id],
+    );
+    if (!f || !visibles.includes(f.plantilla)) throw new NotFoundException('El acta no existe');
+  }
+
+  async obtener(id: number, u: UsuarioToken | null): Promise<Acta> {
+    if (u) await this.verificarAcceso(id, u);
     const a = await this.filaActa(id);
     const extra = await this.db.uno<{ colaborador: string; anterior: string | null; periodo_numero: number | null; periodo_anio: number | null; registrada_por: string; planilla: string | null }>(
       `SELECT CONCAT(c.nombres, ' ', c.apellidos) AS colaborador, CONCAT(an.nombres, ' ', an.apellidos) AS anterior,
@@ -604,8 +621,11 @@ export class ActasService {
   }
 
   /** Lo que el colaborador tiene en su poder: activos asignados y elementos por cantidad según las actas. */
-  async tenencia(colaboradorId: number) {
+  async tenencia(colaboradorId: number, u?: UsuarioToken) {
     await this.colaborador(colaboradorId, this.db);
+    // Quien solo ve actas de EPP (SST) no ve equipos, muebles ni dotación del colaborador
+    const visibles = u ? plantillasVisibles(u.permisos) : null;
+    const ve = (p: Plantilla) => !visibles || visibles.includes(p);
     const activos = await this.db.consultar<{ id: number; placa: string; elemento: string; categoria: Categoria; serial: string | null; marca: string | null; modelo: string | null; condicion: string; desde: string | null; acta: string | null; actaId: number | null }>(
       `SELECT a.id, a.placa_inventario AS placa, e.nombre AS elemento, e.categoria_inventario AS categoria, a.serial, a.marca, a.modelo, a.condicion,
               (SELECT DATE_FORMAT(ac.fecha, '%Y-%m-%d') FROM movimientos_inventario m JOIN actas ac ON ac.id = m.acta_id
@@ -631,7 +651,12 @@ export class ActasService {
       'SELECT tipo_talla AS tipo, talla FROM colaborador_tallas WHERE colaborador_id = ? ORDER BY FIELD(tipo_talla, "CAMISA", "PANTALON", "CALZADO", "GUANTES", "OVEROL", "OTRA")',
       [colaboradorId],
     );
-    return { activos, cantidades, dotacion, tallas };
+    return {
+      activos: activos.filter((a) => ve(a.categoria === 'MUEBLE' ? 'MUEBLES' : 'EQUIPOS')),
+      cantidades: cantidades.filter((c) => ve(c.categoria === 'DOTACION' ? 'DOTACION' : 'OTROS')),
+      dotacion: ve('DOTACION') ? dotacion : [],
+      tallas,
+    };
   }
 
   /** Períodos de dotación del año anterior, el actual y el siguiente; crea los que falten (Art. 232 CST). */

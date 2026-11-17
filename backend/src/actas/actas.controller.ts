@@ -13,7 +13,7 @@ import { ActaAntiguaDto, AnularDto, DevolucionDto, EntregaDto } from './dto/acta
 import { MOTIVOS, MOTIVOS_POR_PLANTILLA } from './textos.js';
 
 const GESTIONAR = ['actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar'];
-const VER = ['actas.ver', ...GESTIONAR];
+const VER = ['actas.ver', 'actas_epp.ver', ...GESTIONAR];
 const MIME: Record<string, string> = { pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png' };
 
 @Controller()
@@ -41,8 +41,8 @@ export class ActasController {
 
   @Permisos(...VER)
   @Get('colaboradores/:id/tenencia')
-  tenencia(@Param('id', IdPipe) id: number) {
-    return this.actas.tenencia(id);
+  tenencia(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken) {
+    return this.actas.tenencia(id, u);
   }
 
   @Permisos(...VER)
@@ -79,7 +79,8 @@ export class ActasController {
 
   @Permisos(...VER)
   @Get('actas/:id/original')
-  async original(@Param('id', IdPipe) id: number, @Res({ passthrough: true }) res: Response) {
+  async original(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken, @Res({ passthrough: true }) res: Response) {
+    await this.actas.verificarAcceso(id, u);
     const f = await this.actas.rutaSoporte(id);
     res.set({ 'Content-Type': MIME[f.nombre.split('.').pop()!] ?? 'application/octet-stream', 'Content-Disposition': disposicion(f.nombre, true) });
     return new StreamableFile(await this.archivos.abrir(f.ruta));
@@ -100,7 +101,8 @@ export class ActasController {
 
   @Permisos(...VER)
   @Get('actas/:id/pdf')
-  async pdf(@Param('id', IdPipe) id: number, @Res({ passthrough: true }) res: Response) {
+  async pdf(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken, @Res({ passthrough: true }) res: Response) {
+    await this.actas.verificarAcceso(id, u);
     const r = await this.actas.pdfGenerado(id);
     res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': disposicion(r.nombre, true) });
     return r.contenido ? new StreamableFile(r.contenido) : new StreamableFile(await this.archivos.abrir(r.ruta!));
@@ -116,7 +118,8 @@ export class ActasController {
 
   @Permisos(...VER)
   @Get('actas/:id/firmada')
-  async firmada(@Param('id', IdPipe) id: number, @Res({ passthrough: true }) res: Response) {
+  async firmada(@Param('id', IdPipe) id: number, @UsuarioActual() u: UsuarioToken, @Res({ passthrough: true }) res: Response) {
+    await this.actas.verificarAcceso(id, u);
     const f = await this.actas.rutaFirmada(id);
     res.set({ 'Content-Type': MIME[f.nombre.split('.').pop()!] ?? 'application/octet-stream', 'Content-Disposition': disposicion(f.nombre, true) });
     return new StreamableFile(await this.archivos.abrir(f.ruta));

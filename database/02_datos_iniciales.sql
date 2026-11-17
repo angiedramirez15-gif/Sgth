@@ -36,6 +36,7 @@ INSERT INTO permisos (codigo, modulo, descripcion) VALUES
   ('inventario_activos.ver', 'inventario', 'Consultar equipos, muebles y otros'),
   ('inventario_activos.gestionar', 'inventario', 'Catálogo, activos, entradas y bajas de equipos, muebles y otros'),
   ('actas.ver', 'actas', 'Consultar actas y descargar PDF'),
+  ('actas_epp.ver', 'actas', 'Consultar solo las actas y planillas de EPP'),
   ('actas_dotacion.gestionar', 'actas', 'Registrar entregas de dotación'),
   ('actas_epp.gestionar', 'actas', 'Registrar entregas de EPP'),
   ('actas_activos.gestionar', 'actas', 'Registrar entregas, traspasos y devoluciones de equipos, muebles y otros'),
@@ -50,11 +51,11 @@ INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r CROSS JOIN permisos p WHERE r.codigo = 'ADMIN';
 
 INSERT INTO rol_permisos (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r JOIN permisos p ON p.codigo IN ('catalogos.ver', 'colaboradores.ver', 'colaboradores.gestionar', 'colaboradores.ver_sensibles', 'documentos.ver', 'documentos.gestionar', 'inventario_dotacion.ver', 'inventario_dotacion.gestionar', 'inventario_epp.ver', 'inventario_activos.ver', 'inventario_activos.gestionar', 'actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'plantillas.ver', 'alertas_th.ver', 'reportes.ver')
+SELECT r.id, p.id FROM roles r JOIN permisos p ON p.codigo IN ('catalogos.ver', 'colaboradores.ver', 'colaboradores.gestionar', 'colaboradores.ver_sensibles', 'documentos.ver', 'documentos.gestionar', 'inventario_dotacion.ver', 'inventario_dotacion.gestionar', 'inventario_epp.ver', 'inventario_epp.gestionar', 'inventario_activos.ver', 'inventario_activos.gestionar', 'actas.ver', 'actas_dotacion.gestionar', 'actas_activos.gestionar', 'actas_epp.gestionar', 'plantillas.ver', 'alertas_th.ver', 'alertas_sst.ver', 'catalogos.gestionar', 'auditoria.ver', 'reportes.ver')
 WHERE r.codigo = 'TH';
 
 INSERT INTO rol_permisos (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r JOIN permisos p ON p.codigo IN ('catalogos.ver', 'colaboradores.ver', 'documentos.ver_sst', 'inventario_dotacion.ver', 'inventario_epp.ver', 'inventario_epp.gestionar', 'inventario_activos.ver', 'actas.ver', 'actas_epp.gestionar', 'plantillas.ver', 'alertas_sst.ver', 'reportes.ver')
+SELECT r.id, p.id FROM roles r JOIN permisos p ON p.codigo IN ('catalogos.ver', 'colaboradores.ver', 'documentos.ver_sst', 'inventario_epp.ver', 'inventario_epp.gestionar', 'actas_epp.ver', 'actas_epp.gestionar', 'alertas_sst.ver', 'reportes.ver')
 WHERE r.codigo = 'SST';
 
 INSERT INTO rol_permisos (rol_id, permiso_id)

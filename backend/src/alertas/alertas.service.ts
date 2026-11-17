@@ -1,3 +1,4 @@
+import { avisosServidor } from '../seguridad/estado-servidor.js';
 import { BadRequestException, Injectable, Logger, NotFoundException, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import type { UsuarioToken } from '../common/tipos.js';
@@ -296,6 +297,7 @@ export class AlertasService implements OnApplicationBootstrap, OnModuleDestroy {
     if (roles.includes('TH') && !(await this.config.numero('smmlv_valor', 0))) {
       avisos.push('Falta el salario mínimo en Configuración: las alertas de dotación solo incluyen a quienes tienen el derecho marcado como "Sí".');
     }
+    if (u.permisos.includes('configuracion.gestionar')) avisos.push(...avisosServidor());
     return {
       tipos: TIPOS_ALERTA.filter((t) => conteos.some((c) => c.tipo === t)).map((t) => {
         const c = conteos.find((x) => x.tipo === t)!;

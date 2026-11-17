@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, watchFile } from 'node:fs';
+import type { Server as ServidorHttps } from 'node:https';
 import { createServer } from 'node:http';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -49,7 +50,7 @@ async function bootstrap() {
           'upgrade-insecure-requests': conHttps ? [] : null,
         },
       },
-      strictTransportSecurity: conHttps ? { maxAge: 180 * 24 * 3600 } : false,
+      strictTransportSecurity: conHttps ? { maxAge: 180 * 24 * 3600, includeSubDomains: false } : false,
       referrerPolicy: { policy: 'no-referrer' },
     }),
   );
@@ -75,6 +76,23 @@ async function bootstrap() {
   const puerto = Number(process.env.PORT ?? 3000);
   await app.listen(puerto, '0.0.0.0'); // 0.0.0.0 = accesible desde otros PC de la red
   log.log(`Backend escuchando en ${conHttps ? 'https' : 'http'}://localhost:${puerto}/api`);
+
+  // Cuando win-acme renueva el certificado, se carga el nuevo sin reiniciar el sistema
+  const archivoCertificado = process.env.HTTPS_CERT || process.env.HTTPS_PFX;
+  if (conHttps && archivoCertificado) {
+    watchFile(archivoCertificado, { interval: Number(process.env.HTTPS_REVISION_SEG ?? 600) * 1000 }, (actual, anterior) => {
+      if (actual.mtimeMs === anterior.mtimeMs) return;
+      // win-acme escribe varios archivos: se espera un momento a que termine
+      setTimeout(() => {
+        try {
+          (app.getHttpServer() as ServidorHttps).setSecureContext(opcionesHttps()!);
+          log.log('Certificado HTTPS renovado y cargado');
+        } catch (e) {
+          log.error(`No se pudo cargar el certificado renovado: ${(e as Error).message}`);
+        }
+      }, Number(process.env.HTTPS_ESPERA_SEG ?? 15) * 1000);
+    });
+  }
 
   // Opcional: quien entre por http://servidor (puerto 80) pasa a https
   const redireccion = Number(process.env.HTTP_REDIRECCION_PUERTO ?? 0);
