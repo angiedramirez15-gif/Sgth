@@ -35,3 +35,19 @@ RESPALDO_CLAVE=
 RESPALDO_DESTINO=
 RESPALDO_LOCAL=C:\SGTH\respaldos
 RESPALDO_ESTADO=C:\SGTH\logs\ultimo_respaldo.json
+
+# --- Avisos por correo (respaldo con error, certificado, sistema caído, ingresos sospechosos) ---
+# El destino se escribe en Administración > Configuración > Avisos por correo.
+# CORREO_MODO=graph para Microsoft 365 (recomendado: Microsoft apaga el envío SMTP con clave
+# desde finales de 2026). Sistemas crea un registro de aplicación con el permiso Mail.Send.
+# CORREO_MODO=smtp para cualquier otro proveedor (llene SMTP_* y deje GRAPH_* vacío).
+CORREO_MODO=
+CORREO_REMITENTE=
+GRAPH_TENANT_ID=
+GRAPH_CLIENT_ID=
+GRAPH_CLIENT_SECRET=
+SMTP_HOST=
+SMTP_PUERTO=587
+SMTP_USUARIO=
+SMTP_CLAVE=
+LOGS_DIR=C:\SGTH\logs

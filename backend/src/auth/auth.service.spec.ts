@@ -44,7 +44,7 @@ describe('AuthService', () => {
     const auditoria = { registrar: vi.fn(async (r: { accion: string }) => void auditados.push(r.accion)) };
     const config = { numero: vi.fn(async (_c: string, d: number) => d) };
     const env = { getOrThrow: () => SECRETO };
-    servicio = new AuthService(db as never, jwt, auditoria as never, config as never, env as never);
+    servicio = new AuthService(db as never, jwt, auditoria as never, config as never, env as never, { usuarioBloqueado: async () => undefined, revisarFallosPorEquipo: async () => undefined } as never);
   });
 
   const token = async () => ({ ...(await jwt.verifyAsync(await (await servicio.login('admin', 'Sgth2026*')).token!)) });

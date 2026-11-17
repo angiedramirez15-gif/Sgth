@@ -7,6 +7,7 @@ import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { UsuarioToken } from '../common/tipos.js';
+import { CorreoService } from '../correo/correo.service.js';
 import { cifrar, descifrar, hashRespaldo, nuevosCodigosRespaldo } from '../seguridad/cifrado.js';
 import { problemaDeClave } from '../seguridad/politica-clave.js';
 import { enlaceApp, nuevoSecreto, verificarCodigo } from '../seguridad/totp.js';
@@ -72,6 +73,7 @@ export class AuthService {
     private readonly auditoria: AuditoriaService,
     private readonly config: ConfiguracionService,
     env: ConfigService,
+    private readonly correo: CorreoService,
   ) {
     this.secretoBase = env.getOrThrow<string>('JWT_SECRETO');
   }
@@ -116,6 +118,9 @@ export class AuthService {
       await this.db.ejecutar('UPDATE usuarios SET intentos_fallidos = ? WHERE id = ?', [intentos, u.id]);
     }
     await this.auditoria.registrar({ usuarioId: u.id, accion: 'LOGIN_FALLIDO', tabla: 'usuarios', registroId: u.id, ip });
+    // Avisos por correo en segundo plano (no demoran la respuesta)
+    if (intentos >= maximo) void this.correo.usuarioBloqueado(u.usuario, u.nombre_completo, ip, MINUTOS_BLOQUEO);
+    void this.correo.revisarFallosPorEquipo(ip).catch(() => undefined);
     throw new UnauthorizedException(
       intentos >= maximo ? `Demasiados intentos fallidos. El usuario quedó bloqueado ${MINUTOS_BLOQUEO} minutos` : mensaje,
     );
@@ -138,6 +143,7 @@ export class AuthService {
       // Se compara igual contra un hash para que la respuesta tarde lo mismo exista o no el usuario
       await bcrypt.compare(clave, HASH_FALSO);
       await this.auditoria.registrar({ usuarioId: null, accion: 'LOGIN_FALLIDO', tabla: 'usuarios', despues: { usuario }, ip });
+      void this.correo.revisarFallosPorEquipo(ip).catch(() => undefined);
       throw new UnauthorizedException(MENSAJE_INVALIDO);
     }
     this.verificarBloqueo(u);

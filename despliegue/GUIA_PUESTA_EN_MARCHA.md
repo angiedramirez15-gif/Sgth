@@ -12,7 +12,7 @@ En esta guía, `sgth.miempresa.com` representa la dirección final: cámbiela po
 | Versión en uso (la que usan todos) | `C:\SGTH\app` con la base de datos `sgth` |
 | Documentos | `C:\SGTH\archivos` |
 | Certificado HTTPS | `C:\SGTH\certificado` |
-| Registros (logs) | `C:\SGTH\logs\sgth.log` y `respaldo.log` |
+| Registros (logs) | `C:\SGTH\logs\sgth.log`, `respaldo.log` y `vigilante.log` |
 | Respaldos | OneDrive de la empresa › `SGTH-Respaldos` (y los últimos 7 en `C:\SGTH\respaldos`) |
 | Desarrollo y pruebas | `C:\Proyectos\SGTH` con la base de datos `sgth_pruebas` |
 
@@ -41,6 +41,15 @@ Envíe este mensaje a TI y espere su respuesta (lo que piden se hace una sola ve
 >    personales y de salud de los colaboradores; Ley 1581 de 2012).
 > 4. Si el router de la oficina bloquea respuestas DNS con IP privadas ("DNS rebinding
 >    protection"), permitir el dominio `sgth.<dominio de la empresa>`.
+> 5. **Avisos por correo** (respaldo con error, sistema caído, ingresos sospechosos). Si el
+>    correo de la empresa es Microsoft 365: crear un buzón o usar uno existente para el
+>    remitente (por ejemplo `sgth@<dominio>`) y un **registro de aplicación** en Microsoft
+>    Entra con el permiso de aplicación **Mail.Send** (Microsoft Graph), con consentimiento
+>    de administrador y un secreto de cliente. Idealmente, limitar la aplicación a ese buzón
+>    (RBAC para aplicaciones de Exchange). Nos envían: ID de inquilino (tenant), ID de
+>    aplicación (cliente), el secreto y la fecha de vencimiento del secreto.
+>    *(El envío SMTP con usuario y clave queda desactivado en Microsoft 365 desde finales de 2026.)*
+>    Si el correo no es Microsoft 365: servidor SMTP, puerto, usuario y clave de un buzón para el sistema.
 >
 > Gracias.
 
@@ -161,7 +170,39 @@ encuentra el nombre, en ese PC (como administrador):
    node scripts\restaurar.mjs probar
    ```
 
-## Paso 9. Separar el desarrollo
+## Paso 9. Avisos por correo *(administrador)*
+
+El SGTH avisa por correo cuando el respaldo falla o se atrasa, cuando el certificado HTTPS
+no se renovó, cuando el sistema deja de responder (lo revisa la tarea "SGTH - Vigilante"
+cada 15 minutos) y cuando hay intentos de ingreso sospechosos (un usuario bloqueado por
+claves erradas, o 10 intentos fallidos desde un mismo equipo en 15 minutos).
+
+1. Con los datos que envió TI (punto 5 del mensaje), edite `C:\SGTH\app\backend\.env`:
+   ```
+   CORREO_MODO=graph
+   CORREO_REMITENTE=sgth@miempresa.com
+   GRAPH_TENANT_ID=(ID de inquilino)
+   GRAPH_CLIENT_ID=(ID de aplicación)
+   GRAPH_CLIENT_SECRET=(secreto)
+   ```
+   Si el correo no es Microsoft 365, use `CORREO_MODO=smtp` y llene `SMTP_HOST`,
+   `SMTP_PUERTO`, `SMTP_USUARIO` y `SMTP_CLAVE`.
+2. Reinicie el SGTH:
+   ```powershell
+   Stop-ScheduledTask -TaskPath \SGTH\ -TaskName 'SGTH - Sistema'; Start-ScheduledTask -TaskPath \SGTH\ -TaskName 'SGTH - Sistema'
+   ```
+3. En **Administración › Configuración › Avisos por correo** escriba su correo, guarde y
+   presione **Enviar correo de prueba**. Debe llegarle en un minuto (revise también el
+   correo no deseado).
+4. Pruebe el vigilante: `C:\SGTH\scripts\vigilante.cmd --probar` y revise que llegue el
+   correo "correo de prueba del vigilante".
+5. Anote en el calendario la **fecha de vencimiento del secreto** (GRAPH_CLIENT_SECRET):
+   antes de esa fecha, TI genera uno nuevo y se cambia en el `.env`.
+
+Si el equipo servidor está apagado, nadie puede avisar; en ese caso le llegará el correo de
+respaldo atrasado cuando vuelva a encenderse.
+
+## Paso 10. Separar el desarrollo
 
 A partir de aquí, lo que haga en `C:\Proyectos\SGTH` **no toca** los datos reales.
 
@@ -177,10 +218,14 @@ A partir de aquí, lo que haga en `C:\Proyectos\SGTH` **no toca** los datos real
    ```
 3. Para desarrollar, siga usando `npm run start:dev` y `ng serve` como siempre
    (puertos 3000 y 4200; no chocan con la versión en uso).
+4. Desde ahora puede correr las **pruebas completas** (crean datos de prueba, por eso solo
+   funcionan con `sgth_pruebas`): con `npm run start:dev` abierto, en otra ventana
+   `cd C:\Proyectos\SGTH\backend` y `npm run test:integracion`. Hágalo antes de instalar
+   cada versión nueva.
 
 La base de pruebas tiene una copia de datos reales: no la comparta ni la saque del portátil.
 
-## Paso 10. Usuarios y capacitación
+## Paso 11. Usuarios y capacitación
 
 1. En **Usuarios**, cree el usuario de cada persona con su rol. El sistema da una clave
    temporal: entréguesela en persona.
@@ -208,7 +253,8 @@ La base de pruebas tiene una copia de datos reales: no la comparta ni la saque d
 
 ### Instalar una versión nueva
 
-1. Termine y pruebe el cambio en desarrollo (base `sgth_pruebas`); haga commit y push.
+1. Termine y pruebe el cambio en desarrollo (base `sgth_pruebas`), corra `npm run test:integracion`
+   en `backend` (todas deben pasar) y haga commit y push.
 2. Si trae un cambio de base de datos (`database\cambios\0XX_...sql`), ejecútelo en
    HeidiSQL como root **en las dos bases**: tal cual (base `sgth`) y otra vez cambiando
    la línea `USE sgth;` por `USE sgth_pruebas;`.
@@ -222,6 +268,8 @@ La base de pruebas tiene una copia de datos reales: no la comparta ni la saque d
 | Nadie puede entrar | ¿El portátil está prendido y en la red? En el portátil abra `https://sgth.miempresa.com`. Revise `C:\SGTH\logs\sgth.log`. |
 | El sistema no arrancó después de reiniciar | Programador de tareas › SGTH › "SGTH - Sistema" › Ejecutar. Revise que el servicio de MariaDB esté iniciado. |
 | Un PC no encuentra la dirección | `5-verificar.ps1` en ese PC; si hace falta, `-AgregarHosts`. |
+| Llegó el correo "el sistema no responde" | Igual que "Nadie puede entrar". Cuando vuelva a funcionar llega otro correo. El detalle está en `C:\SGTH\logs\vigilante.log`. |
+| No llegan los correos de aviso | Configuración › Avisos por correo › Enviar correo de prueba: el mensaje de error dice qué falla. Si dice que el secreto venció, TI genera uno nuevo (`GRAPH_CLIENT_SECRET` en el `.env`) y se reinicia el SGTH. |
 | Aviso "El último respaldo falló" | Revise `C:\SGTH\logs\respaldo.log` (clave de `sgth_respaldo`, OneDrive, espacio en disco). |
 | Aviso de certificado por vencer | Programador de tareas › tarea "win-acme renew" › historial. Ejecute `C:\SGTH\win-acme\wacs.exe` › "R: Run renewals". |
 | Perdió el celular | Otro administrador: Usuarios › Reiniciar doble verificación. |

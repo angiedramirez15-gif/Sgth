@@ -34,7 +34,7 @@ En HeidiSQL, conectado como `root`, ejecutar en orden los scripts de `database/`
    Es el usuario con el que el backend se conecta a MariaDB.
 
 **Cambios posteriores:** si la base se creó antes de una actualización, ejecute en orden los scripts nuevos
-de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql`, `008_planillas_epp.sql`, `009_alertas_descarte.sql`, `010_certificados_laborales.sql`, `011_seguridad_habeas_data.sql` y `012_base_pruebas_y_respaldo.sql`).
+de `database/cambios/` (por ejemplo `004_datos_adicionales_colaborador.sql`, `005_opcion_no_aplica.sql`, `006_inventario_placas_actas_antiguas.sql`, `007_actas_ubicacion_pie.sql`, `008_planillas_epp.sql`, `009_alertas_descarte.sql`, `010_certificados_laborales.sql`, `011_seguridad_habeas_data.sql`, `012_base_pruebas_y_respaldo.sql`, `013_permisos_th_sst.sql` y `014_avisos_correo.sql`).
 Se ejecutan conectado como **root** (sgth_app no puede cambiar tablas) y se pueden repetir sin error.
 Una instalación nueva no los necesita: el script 01 ya los incluye.
 
@@ -62,7 +62,14 @@ npm run start:dev
 
 Compruebe en el navegador: <http://localhost:3000/api/salud> debe mostrar `"baseDatos": "ok"`.
 
-Pruebas automáticas: `npm test`
+Pruebas automáticas:
+
+- `npm test`: pruebas rápidas de las reglas del sistema (no necesitan la base de datos).
+- `npm run test:integracion`: pruebas completas contra el backend en marcha (`npm run start:dev` en otra
+  ventana) y la base **`sgth_pruebas`**: seguridad, permisos por rol, colaboradores, inventario, actas,
+  reportes y auditoría. Crean sus propios datos (marcados `PRB…`) y los usuarios `auto.admin`, `auto.th`
+  y `auto.sst`, que quedan inactivos al terminar. Se niegan a correr si el `.env` apunta a la base `sgth`.
+  Córralas antes de instalar cada versión nueva.
 
 ## 4. Frontend (interfaz)
 
@@ -176,10 +183,12 @@ sgth/
 │       ├── actas/          actas, plantillas, PDF, matriz y planillas de EPP
 │       ├── alertas/        cálculo y gestión de alertas
 │       ├── certificados/   certificados laborales
+│       ├── correo/         avisos por correo (Microsoft Graph o SMTP)
 │       ├── seguridad/      doble verificación, cifrado, reglas de claves, compromiso
 │       ├── reportes/       reportes en Excel
 │       └── salud/          GET /api/salud
-│   └── scripts/        respaldo.mjs y restaurar.mjs (respaldo cifrado)
+│   ├── scripts/        respaldo.mjs, restaurar.mjs (respaldo cifrado) y vigilante.mjs (sistema caído)
+│   └── test/integracion/  pruebas completas (npm run test:integracion)
 ├── frontend/           Angular
 │   ├── public/marca/       logo e isotipo de DRIM DUIT
 │   └── src/
@@ -229,6 +238,11 @@ La guía paso a paso está en **`despliegue/GUIA_PUESTA_EN_MARCHA.md`**. Resumen
 - **Respaldo diario cifrado** a las 12:30 p. m. a OneDrive de la empresa (`backend/scripts/respaldo.mjs`):
   base de datos completa y documentos nuevos, AES-256-GCM, 30 días + 1 por mes durante 12 meses. Se restaura con
   `backend/scripts/restaurar.mjs`. El Inicio avisa al administrador si el respaldo falla o el certificado no se renovó.
+- **Avisos por correo** (Configuración › Avisos por correo): respaldo con error o atrasado, certificado sin
+  renovar, sistema caído (tarea "SGTH - Vigilante", cada 15 minutos, `backend/scripts/vigilante.mjs`) e ingresos
+  sospechosos (usuario bloqueado, o 10 intentos fallidos desde un equipo en 15 minutos). Salen por Microsoft Graph
+  (`CORREO_MODO=graph`) o SMTP (`CORREO_MODO=smtp`); cada aviso se repite como máximo una vez al día (los de
+  ingresos, una vez por hora).
 - **Firewall:** 443 y 80 solo desde la red local; MariaDB bloqueado desde otros equipos.
 
 ## 10. Cómo se protege cada ruta del backend

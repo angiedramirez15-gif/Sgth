@@ -143,3 +143,14 @@
   &:focus { outline: 2px solid var(--sgth-petroleo); outline-offset: 1px; }
 }
 .compromiso__acciones { display: flex; justify-content: flex-end; gap: 8px; }
+
+.estado-correo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--sgth-tinta-suave);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &--ok { color: var(--sgth-verde-texto); }
+}

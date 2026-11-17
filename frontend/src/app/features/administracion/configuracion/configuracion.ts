@@ -12,9 +12,10 @@ import { AvisosService } from '../../../shared/avisos.service';
 import { AdministracionService, type Parametro } from '../administracion.service';
 import { CertificadosService } from '../../certificados/certificados.service';
 
+interface EstadoCorreo { configurado: boolean; modo: 'graph' | 'smtp' | null; remitente: string | null; destino: string | null }
 interface Compromiso { id: number; version: number; texto: string; creadoEn: string; creadoPor: string | null; usuariosActivos: number; aceptaron: number }
 
-const ORDEN_GRUPOS = ['Dotación', 'Alertas', 'Empresa y actas', 'Certificados laborales', 'Seguridad', 'Archivos'];
+const ORDEN_GRUPOS = ['Dotación', 'Alertas', 'Avisos por correo', 'Empresa y actas', 'Certificados laborales', 'Seguridad', 'Archivos'];
 
 @Component({
   selector: 'app-configuracion',
@@ -41,6 +42,9 @@ export class Configuracion implements OnInit, OnDestroy {
   /** Imagen de la firma de los certificados (URL local del navegador). */
   protected readonly firma = signal<string | null>(null);
   protected readonly subiendoFirma = signal(false);
+  /** Envío de correos configurado en el servidor (.env) para los avisos. */
+  protected readonly correo = signal<EstadoCorreo | null>(null);
+  protected readonly probandoCorreo = signal(false);
 
   protected readonly grupos = computed(() => {
     const ps = this.parametros();
@@ -58,6 +62,7 @@ export class Configuracion implements OnInit, OnDestroy {
       this.borradores.set(Object.fromEntries(ps.map((p) => [p.clave, p.valor ?? ''])));
       if (ps.some((p) => p.grupo === 'Certificados laborales')) await this.cargarFirma();
       await this.cargarCompromiso();
+      if (ps.some((p) => p.grupo === 'Avisos por correo')) await this.cargarCorreo();
     } catch (e) {
       this.avisos.error(e, 'No se pudo cargar la configuración');
     } finally {
@@ -98,6 +103,26 @@ export class Configuracion implements OnInit, OnDestroy {
   ngOnDestroy() {
     const url = this.firma();
     if (url) URL.revokeObjectURL(url);
+  }
+
+  private async cargarCorreo() {
+    try {
+      this.correo.set(await firstValueFrom(this.http.get<EstadoCorreo>('/api/configuracion/correo')));
+    } catch {
+      this.correo.set(null);
+    }
+  }
+
+  async probarCorreo() {
+    this.probandoCorreo.set(true);
+    try {
+      const r = await firstValueFrom(this.http.post<{ enviadoA: string }>('/api/configuracion/correo/prueba', {}));
+      this.avisos.exito(`Correo de prueba enviado a ${r.enviadoA}. Revise la bandeja de entrada (y la de correo no deseado).`);
+    } catch (e) {
+      this.avisos.error(e, 'No se pudo enviar el correo de prueba');
+    } finally {
+      this.probandoCorreo.set(false);
+    }
   }
 
   private async cargarFirma() {
@@ -147,6 +172,7 @@ export class Configuracion implements OnInit, OnDestroy {
       this.parametros.update((ps) => ps.map((x) => (x.clave === p.clave ? nuevo : x)));
       this.editar(p.clave, nuevo.valor ?? '');
       this.avisos.exito(`"${p.etiqueta}" guardado`);
+      if (p.grupo === 'Avisos por correo') await this.cargarCorreo();
     } catch (e) {
       this.avisos.error(e);
     } finally {

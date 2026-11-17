@@ -1,9 +1,10 @@
-import { BadRequestException, Body, Controller, Get, Ip, NotFoundException, Param, Put } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Ip, NotFoundException, Param, Post, Put } from '@nestjs/common';
 import { IsString, MaxLength } from 'class-validator';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { Permisos, UsuarioActual } from '../common/decorators/decoradores.js';
 import type { UsuarioToken } from '../common/tipos.js';
 import { DatabaseService } from '../database/database.service.js';
+import { CorreoService } from '../correo/correo.service.js';
 import { ConfiguracionService } from './configuracion.service.js';
 import { PARAMETROS, PARAMETROS_POR_CLAVE } from './parametros.js';
 
@@ -21,6 +22,7 @@ export class ConfiguracionController {
     private readonly db: DatabaseService,
     private readonly config: ConfiguracionService,
     private readonly auditoria: AuditoriaService,
+    private readonly correo: CorreoService,
   ) {}
 
   /** GET /api/configuracion */
@@ -34,6 +36,19 @@ export class ConfiguracionController {
     return PARAMETROS.filter((p) => porClave.has(p.clave)).map((p) => ({ ...p, ...porClave.get(p.clave) }));
   }
 
+  /** GET /api/configuracion/correo: si el servidor tiene configurado el envío de correos. */
+  @Get('correo')
+  estadoCorreo() {
+    return this.correo.estado();
+  }
+
+  /** POST /api/configuracion/correo/prueba: envía un correo de prueba al destino de los avisos. */
+  @Post('correo/prueba')
+  @HttpCode(200)
+  probarCorreo(@UsuarioActual() u: UsuarioToken) {
+    return this.correo.probar(u.nombre);
+  }
+
   /** PUT /api/configuracion/:clave  { valor } */
   @Put(':clave')
   async guardar(@Param('clave') clave: string, @Body() dto: GuardarParametroDto, @UsuarioActual() u: UsuarioToken, @Ip() ip: string) {
@@ -45,6 +60,13 @@ export class ConfiguracionController {
     if (p.tipo === 'texto') {
       if (!valor) throw new BadRequestException(`Escriba un valor para "${p.etiqueta}"`);
       if (p.maximo && valor.length > p.maximo) throw new BadRequestException(`"${p.etiqueta}" no puede superar ${p.maximo} caracteres`);
+      if (p.formato === 'correo') {
+        const correos = valor.split(/[,;]/).map((c) => c.trim()).filter(Boolean);
+        if (!correos.length || correos.some((c) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c))) {
+          throw new BadRequestException(`"${p.etiqueta}" debe ser un correo válido, por ejemplo nombre@empresa.com`);
+        }
+        valor = correos.join(', ');
+      }
       if (p.formato === 'url') {
         valor = valor.replace(/\/+$/, '');
         if (!/^https?:\/\/[^\s/]+(:\d+)?$/i.test(valor)) {

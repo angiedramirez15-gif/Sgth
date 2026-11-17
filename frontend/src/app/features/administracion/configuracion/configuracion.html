@@ -78,6 +78,29 @@
         </div>
       }
 
+      @if (g.nombre === 'Avisos por correo' && correo(); as c) {
+        <div class="parametro">
+          <div class="parametro__texto">
+            <span class="parametro__etiqueta">Envío desde el servidor</span>
+            @if (c.configurado) {
+              <p class="parametro__ayuda">Los avisos salen de <strong>{{ c.remitente }}</strong> ({{ c.modo === 'graph' ? 'Microsoft 365' : 'servidor de correo' }}). Envíe una prueba después de cambiar el destino.</p>
+            } @else {
+              <p class="parametro__ayuda">Todavía no está configurado: sistemas debe completar los datos de correo en el archivo .env del servidor (guía de puesta en marcha). Mientras tanto, los avisos solo se ven en el sistema.</p>
+            }
+          </div>
+          <div class="parametro__valor">
+            @if (c.configurado) {
+              <span class="estado-correo estado-correo--ok"><mat-icon>check_circle</mat-icon>Configurado</span>
+            } @else {
+              <span class="estado-correo"><mat-icon>schedule</mat-icon>Pendiente</span>
+            }
+            <button mat-stroked-button type="button" (click)="probarCorreo()" [disabled]="!c.configurado || !c.destino || probandoCorreo()">
+              <mat-icon>send</mat-icon>{{ probandoCorreo() ? 'Enviando…' : 'Enviar correo de prueba' }}
+            </button>
+          </div>
+        </div>
+      }
+
       @if (g.nombre === 'Certificados laborales') {
         <div class="parametro">
           <div class="parametro__texto">

@@ -1,0 +1,3 @@
+# Windows: los scripts de PowerShell y .cmd deben tener fin de línea CRLF
+*.ps1 text eol=crlf
+*.cmd text eol=crlf

@@ -2,14 +2,14 @@
 export interface Parametro {
   clave: string;
   etiqueta: string;
-  grupo: 'Empresa y actas' | 'Certificados laborales' | 'Dotación' | 'Alertas' | 'Seguridad' | 'Archivos';
+  grupo: 'Empresa y actas' | 'Certificados laborales' | 'Dotación' | 'Alertas' | 'Avisos por correo' | 'Seguridad' | 'Archivos';
   tipo: 'texto' | 'numero' | 'dinero';
   minimo?: number;
   maximo?: number;
   sufijo?: string;
   editable: boolean;
   ayuda?: string;
-  formato?: 'url';
+  formato?: 'url' | 'correo';
 }
 
 export const PARAMETROS: Parametro[] = [
@@ -33,6 +33,8 @@ export const PARAMETROS: Parametro[] = [
   { clave: 'dias_alerta_contrato', etiqueta: 'Aviso de fin de contrato', grupo: 'Alertas', tipo: 'numero', minimo: 1, maximo: 365, sufijo: 'días antes', editable: true },
   { clave: 'dias_alerta_epp', etiqueta: 'Aviso de reposición de EPP', grupo: 'Alertas', tipo: 'numero', minimo: 1, maximo: 365, sufijo: 'días antes', editable: true },
   { clave: 'dias_alerta_dotacion', etiqueta: 'Aviso de dotación pendiente', grupo: 'Alertas', tipo: 'numero', minimo: 1, maximo: 120, sufijo: 'días antes de la fecha límite', editable: true },
+
+  { clave: 'avisos_correo_destino', etiqueta: 'Correo que recibe los avisos', grupo: 'Avisos por correo', tipo: 'texto', maximo: 150, formato: 'correo', editable: true, ayuda: 'Respaldo con error, certificado HTTPS por vencer, sistema caído e intentos de ingreso sospechosos. Puede escribir varios separados por coma' },
 
   { clave: 'sesion_minutos_inactividad', etiqueta: 'Cierre de sesión por inactividad', grupo: 'Seguridad', tipo: 'numero', minimo: 5, maximo: 480, sufijo: 'minutos', editable: true, ayuda: 'Aplica desde el siguiente inicio de sesión' },
   { clave: 'login_intentos_maximos', etiqueta: 'Intentos fallidos antes de bloquear', grupo: 'Seguridad', tipo: 'numero', minimo: 3, maximo: 10, sufijo: 'intentos', editable: true, ayuda: 'El usuario queda bloqueado 15 minutos' },

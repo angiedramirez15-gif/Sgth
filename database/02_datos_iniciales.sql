@@ -167,6 +167,7 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('clave_dias_vigencia', '90', 'Días que dura una clave antes de pedir cambiarla'),
   ('clave_longitud_minima', '12', 'Caracteres mínimos de una clave'),
   ('url_sistema', 'http://localhost:3000', 'Dirección con la que se abre el sistema en la red; va en el QR de los stickers'),
+  ('avisos_correo_destino', NULL, 'Correo que recibe los avisos automáticos del sistema'),
   ('prefijo_placa', 'DD', 'Prefijo de las placas de inventario: DD-EQ-0001'),
   ('empresa_nit', NULL, 'NIT de la empresa; va en los certificados laborales'),
   ('certificado_firmante_nombre', NULL, 'Nombre de quien firma los certificados laborales'),

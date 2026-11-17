@@ -96,7 +96,7 @@ Copiar (Join-Path $backendRepo 'assets') (Join-Path $backendApp 'assets')
 Copiar (Join-Path $backendRepo 'scripts') (Join-Path $backendApp 'scripts')
 Copy-Item (Join-Path $backendRepo 'package.json'), (Join-Path $backendRepo 'package-lock.json') $backendApp -Force
 Copiar (Join-Path $frontendRepo 'dist\frontend\browser') (Join-Path $Destino 'frontend')
-Copy-Item (Join-Path $PSScriptRoot 'iniciar-sgth.cmd'), (Join-Path $PSScriptRoot 'respaldo.cmd') 'C:\SGTH\scripts' -Force
+Copy-Item (Join-Path $PSScriptRoot 'iniciar-sgth.cmd'), (Join-Path $PSScriptRoot 'respaldo.cmd'), (Join-Path $PSScriptRoot 'vigilante.cmd') 'C:\SGTH\scripts' -Force
 Ejecutar 'npm ci --omit=dev --no-audit --no-fund' $backendApp
 Set-Content -Path (Join-Path $Destino 'VERSION.txt') -Value "$version`r`nInstalada: $(Get-Date -Format 'yyyy-MM-dd HH:mm')" -Encoding UTF8
 Ok 'Copiado'
@@ -133,9 +133,8 @@ if ($faltan) { Aviso "Faltan en el .env: $($faltan -join ', '). Ábralo con: not
 if (-not $cfg['HTTPS_CERT']) { Aviso 'Todavía sin certificado: el sistema queda en http. Haga el paso 4 (4-certificado.ps1).' }
 
 Paso 'Tareas programadas'
-if (-not (Get-ScheduledTask -TaskName 'SGTH - Sistema' -ErrorAction SilentlyContinue)) {
-  & (Join-Path $PSScriptRoot '3-tareas-programadas.ps1')
-} else { Ok 'Ya registradas' }
+# Se registran siempre (si ya existen se actualizan): así una actualización agrega las tareas nuevas
+& (Join-Path $PSScriptRoot '3-tareas-programadas.ps1')
 
 Paso 'Iniciar el SGTH'
 if ($faltan) { Aviso 'No se inicia hasta completar el .env. Después ejecute: Start-ScheduledTask -TaskPath \SGTH\ -TaskName "SGTH - Sistema"'; exit 0 }

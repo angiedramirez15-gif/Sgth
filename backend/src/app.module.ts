@@ -19,6 +19,10 @@ import { CompartidoModule } from './common/compartido.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { SaludController } from './salud/salud.controller.js';
 
+// El .env se lee aquí antes que ConfigModule: FRONTEND_DIST se necesita al cargar este archivo.
+// (No reemplaza variables que ya existan.)
+if (existsSync('.env')) process.loadEnvFile('.env');
+
 // En producción, NestJS también entrega la versión compilada de Angular (sección 3.3).
 const rutaFrontend = resolve(process.env.FRONTEND_DIST ?? '../frontend/dist/frontend/browser');
 const servirFrontend = existsSync(rutaFrontend)

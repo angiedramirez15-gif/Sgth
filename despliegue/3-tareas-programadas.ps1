@@ -7,6 +7,8 @@
      solo cada minuto.
    - "SGTH - Respaldo diario": respaldo cifrado a las 12:30 p. m. Si el portátil
      estaba apagado a esa hora, se hace apenas se encienda.
+   - "SGTH - Vigilante": cada 15 minutos revisa que el sistema responda y, si
+     se cae, avisa por correo (y otra vez cuando vuelve a funcionar).
 
   Ver o cambiar: Programador de tareas > Biblioteca > SGTH.
 #>
@@ -34,3 +36,12 @@ $ajustes = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoin
 Register-ScheduledTask -TaskName 'SGTH - Respaldo diario' -TaskPath '\SGTH\' -Action $accion -Trigger $diario -Settings $ajustes -Principal $sistema `
   -Description 'Respaldo cifrado de la base de datos y los documentos del SGTH a OneDrive.' -Force | Out-Null
 Ok "Tarea ""SGTH - Respaldo diario"": todos los días a las $HoraRespaldo"
+
+# --- SGTH - Vigilante ---
+$accion = New-ScheduledTaskAction -Execute "$env:WINDIR\System32\cmd.exe" -Argument '/c "C:\SGTH\scripts\vigilante.cmd"' -WorkingDirectory 'C:\SGTH\app\backend'
+$cada15 = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 15)
+$ajustes = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskName 'SGTH - Vigilante' -TaskPath '\SGTH\' -Action $accion -Trigger $cada15 -Settings $ajustes -Principal $sistema `
+  -Description 'Revisa cada 15 minutos que el SGTH responda y avisa por correo si se cae.' -Force | Out-Null
+Ok 'Tarea "SGTH - Vigilante": cada 15 minutos'
